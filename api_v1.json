@@ -1,0 +1,1417 @@
+{
+  "openapi" : "3.0.3",
+  "info" : {
+    "title" : "Coral Server API",
+    "version" : "1.0"
+  },
+  "externalDocs" : {
+    "url" : "/"
+  },
+  "servers" : [ ],
+  "tags" : [ ],
+  "paths" : {
+    "/api/v1/sessions" : {
+      "get" : {
+        "tags" : [ "sessions" ],
+        "summary" : "Get sessions",
+        "description" : "Fetches all active session IDs",
+        "operationId" : "getSessions",
+        "parameters" : [ ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "type" : "string",
+                    "title" : "String"
+                  },
+                  "title" : "ArrayList<String>"
+                }
+              }
+            }
+          }
+        },
+        "deprecated" : false
+      },
+      "post" : {
+        "tags" : [ "sessions" ],
+        "summary" : "Create session",
+        "description" : "Creates a new session",
+        "operationId" : "createSession",
+        "parameters" : [ ],
+        "requestBody" : {
+          "description" : "Session creation request",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateSessionRequest"
+              }
+            }
+          },
+          "required" : false
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CreateSessionResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Invalid application ID or privacy key",
+            "headers" : { }
+          }
+        },
+        "deprecated" : false
+      }
+    },
+    "/api/v1/message/{applicationId}/{privacyKey}/{coralSessionId}" : {
+      "post" : {
+        "tags" : [ "message" ],
+        "summary" : "Send message",
+        "description" : "Sends a message",
+        "operationId" : "sendMessage",
+        "parameters" : [ {
+          "name" : "applicationId",
+          "in" : "path",
+          "description" : "The application ID",
+          "required" : true,
+          "deprecated" : false,
+          "explode" : false,
+          "schema" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        }, {
+          "name" : "privacyKey",
+          "in" : "path",
+          "description" : "The privacy key",
+          "required" : true,
+          "deprecated" : false,
+          "explode" : false,
+          "schema" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        }, {
+          "name" : "coralSessionId",
+          "in" : "path",
+          "description" : "The Coral session ID",
+          "required" : true,
+          "deprecated" : false,
+          "explode" : false,
+          "schema" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "headers" : { }
+          },
+          "403" : {
+            "description" : "Invalid application ID or privacy key",
+            "headers" : { }
+          },
+          "404" : {
+            "description" : "Invalid Coral session ID",
+            "headers" : { }
+          },
+          "400" : {
+            "description" : "Invalid session ID",
+            "headers" : { }
+          },
+          "500" : {
+            "description" : "MCP error",
+            "headers" : { }
+          }
+        },
+        "deprecated" : false
+      }
+    },
+    "/api/v1/message/devmode/{applicationId}/{privacyKey}/{coralSessionId}" : {
+      "post" : {
+        "tags" : [ "message" ],
+        "summary" : "Send development message",
+        "description" : "Sends a dev-mode message",
+        "operationId" : "sendDevMessage",
+        "parameters" : [ {
+          "name" : "applicationId",
+          "in" : "path",
+          "description" : "The application ID",
+          "required" : true,
+          "deprecated" : false,
+          "explode" : false,
+          "schema" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        }, {
+          "name" : "privacyKey",
+          "in" : "path",
+          "description" : "The privacy key",
+          "required" : true,
+          "deprecated" : false,
+          "explode" : false,
+          "schema" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        }, {
+          "name" : "coralSessionId",
+          "in" : "path",
+          "description" : "The Coral session ID",
+          "required" : true,
+          "deprecated" : false,
+          "explode" : false,
+          "schema" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "headers" : { }
+          },
+          "404" : {
+            "description" : "Invalid Coral session ID",
+            "headers" : { }
+          },
+          "400" : {
+            "description" : "Invalid session ID",
+            "headers" : { }
+          },
+          "500" : {
+            "description" : "MCP error",
+            "headers" : { }
+          }
+        },
+        "deprecated" : false
+      }
+    },
+    "/api/v1/telemetry/{sessionId}/{threadId}/{messageId}" : {
+      "get" : {
+        "tags" : [ "telemetry" ],
+        "summary" : "Get telemetry",
+        "description" : "Fetches telemetry information for a given message",
+        "operationId" : "getTelemetry",
+        "parameters" : [ {
+          "name" : "sessionId",
+          "in" : "path",
+          "description" : "The session ID",
+          "required" : true,
+          "deprecated" : false,
+          "explode" : false,
+          "schema" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        }, {
+          "name" : "threadId",
+          "in" : "path",
+          "description" : "The thread ID",
+          "required" : true,
+          "deprecated" : false,
+          "explode" : false,
+          "schema" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        }, {
+          "name" : "messageId",
+          "in" : "path",
+          "description" : "The message ID",
+          "required" : true,
+          "deprecated" : false,
+          "explode" : false,
+          "schema" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Telemetry"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Telemetry data not found for specified message",
+            "headers" : { }
+          }
+        },
+        "deprecated" : false
+      }
+    },
+    "/api/v1/telemetry/{sessionId}" : {
+      "post" : {
+        "tags" : [ "telemetry" ],
+        "summary" : "Add telemetry",
+        "description" : "Attaches telemetry information a list of messages",
+        "operationId" : "addTelemetry",
+        "parameters" : [ {
+          "name" : "sessionId",
+          "in" : "path",
+          "description" : "The session ID",
+          "required" : true,
+          "deprecated" : false,
+          "explode" : false,
+          "schema" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        } ],
+        "requestBody" : {
+          "description" : "Telemetry data",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/TelemetryPost"
+              }
+            }
+          },
+          "required" : false
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "headers" : { }
+          }
+        },
+        "deprecated" : false
+      }
+    },
+    "/api/v1/agents" : {
+      "get" : {
+        "tags" : [ "agents" ],
+        "summary" : "Get agent registry",
+        "description" : "Fetches a list of available agents",
+        "operationId" : "getAgentRegistry",
+        "parameters" : [ ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/PublicRegistryAgent"
+                  },
+                  "title" : "ArrayList<PublicRegistryAgent>"
+                }
+              }
+            }
+          }
+        },
+        "deprecated" : false
+      }
+    }
+  },
+  "components" : {
+    "schemas" : {
+      "AgentGraphRequest" : {
+        "type" : "object",
+        "properties" : {
+          "agents" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "$ref" : "#/components/schemas/GraphAgentRequest"
+            },
+            "title" : "HashMap<AgentName,GraphAgentRequest>"
+          },
+          "links" : {
+            "type" : "array",
+            "items" : {
+              "type" : "array",
+              "items" : {
+                "type" : "string",
+                "title" : "String"
+              },
+              "title" : "LinkedHashSet<String>",
+              "uniqueItems" : true
+            },
+            "title" : "LinkedHashSet<LinkedHashSet<String>>",
+            "uniqueItems" : true
+          },
+          "tools" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "$ref" : "#/components/schemas/CustomTool"
+            },
+            "title" : "LinkedHashMap<String,CustomTool>"
+          }
+        },
+        "required" : [ "agents", "links", "tools" ],
+        "title" : "AgentGraphRequest"
+      },
+      "GraphAgentRequest" : {
+        "anyOf" : [ {
+          "type" : "object",
+          "properties" : {
+            "agentType" : {
+              "type" : "string",
+              "title" : "AgentType"
+            },
+            "options" : {
+              "type" : "object",
+              "additionalProperties" : {
+                "type" : "string",
+                "title" : "JsonPrimitive"
+              },
+              "title" : "LinkedHashMap<String,JsonPrimitive>"
+            },
+            "systemPrompt" : {
+              "type" : "string",
+              "title" : "String"
+            },
+            "tools" : {
+              "type" : "array",
+              "items" : {
+                "type" : "string",
+                "title" : "String"
+              },
+              "title" : "LinkedHashSet<String>",
+              "uniqueItems" : true
+            },
+            "blocking" : {
+              "type" : "boolean",
+              "title" : "Boolean"
+            }
+          },
+          "required" : [ "agentType", "options", "tools" ],
+          "title" : "local"
+        }, {
+          "type" : "object",
+          "properties" : {
+            "remote" : {
+              "$ref" : "#/components/schemas/remote"
+            },
+            "options" : {
+              "type" : "object",
+              "additionalProperties" : {
+                "type" : "string",
+                "title" : "JsonPrimitive"
+              },
+              "title" : "LinkedHashMap<String,JsonPrimitive>"
+            },
+            "systemPrompt" : {
+              "type" : "string",
+              "title" : "String"
+            },
+            "tools" : {
+              "type" : "array",
+              "items" : {
+                "type" : "string",
+                "title" : "String"
+              },
+              "title" : "LinkedHashSet<String>",
+              "uniqueItems" : true
+            },
+            "blocking" : {
+              "type" : "boolean",
+              "title" : "Boolean"
+            }
+          },
+          "required" : [ "options", "remote", "tools" ],
+          "title" : "remote"
+        } ],
+        "title" : "GraphAgentRequest"
+      },
+      "remote" : {
+        "type" : "object",
+        "properties" : {
+          "host" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "agentType" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "appId" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "privacyKey" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        },
+        "required" : [ "agentType", "appId", "host", "privacyKey" ],
+        "title" : "remote"
+      },
+      "CustomTool" : {
+        "type" : "object",
+        "properties" : {
+          "transport" : {
+            "$ref" : "#/components/schemas/ToolTransport"
+          },
+          "toolSchema" : {
+            "$ref" : "#/components/schemas/Tool"
+          }
+        },
+        "required" : [ "toolSchema", "transport" ],
+        "title" : "CustomTool"
+      },
+      "ToolTransport" : {
+        "anyOf" : [ {
+          "type" : "object",
+          "properties" : {
+            "url" : {
+              "type" : "string",
+              "title" : "UriString"
+            }
+          },
+          "required" : [ "url" ],
+          "title" : "http"
+        } ],
+        "title" : "ToolTransport"
+      },
+      "Tool" : {
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "description" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "inputSchema" : {
+            "$ref" : "#/components/schemas/Input"
+          }
+        },
+        "required" : [ "inputSchema", "name" ],
+        "title" : "Tool"
+      },
+      "Input" : {
+        "type" : "object",
+        "properties" : {
+          "properties" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "$ref" : "#/components/schemas/JsonElement"
+            },
+            "title" : "JsonObject<String,JsonElement>"
+          },
+          "required" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "title" : "String"
+            },
+            "title" : "ArrayList<String>"
+          },
+          "type" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        },
+        "required" : [ "properties", "type" ],
+        "title" : "Input"
+      },
+      "JsonElement" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "JsonElement"
+      },
+      "CreateSessionRequest" : {
+        "type" : "object",
+        "properties" : {
+          "applicationId" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "sessionId" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "privacyKey" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "agentGraph" : {
+            "$ref" : "#/components/schemas/AgentGraphRequest"
+          }
+        },
+        "required" : [ "applicationId", "privacyKey" ],
+        "title" : "CreateSessionRequest"
+      },
+      "CreateSessionResponse" : {
+        "type" : "object",
+        "properties" : {
+          "sessionId" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "applicationId" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "privacyKey" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        },
+        "required" : [ "applicationId", "privacyKey", "sessionId" ],
+        "title" : "CreateSessionResponse"
+      },
+      "Document" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "text" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        },
+        "required" : [ "id", "text" ],
+        "title" : "Document"
+      },
+      "ToolFunction" : {
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "arguments" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        },
+        "required" : [ "arguments", "name" ],
+        "title" : "ToolFunction"
+      },
+      "ContentFormat" : {
+        "type" : "string",
+        "enum" : [ "base64", "string" ],
+        "title" : "ContentFormat"
+      },
+      "AudioMediaType" : {
+        "type" : "string",
+        "enum" : [ "wav", "mp3", "aiff", "aac", "ogg", "flac" ],
+        "title" : "AudioMediaType"
+      },
+      "DocumentMediaType" : {
+        "type" : "string",
+        "enum" : [ "pdf", "txt", "rtf", "html", "css", "markdown", "csv", "xml", "javascript", "python" ],
+        "title" : "DocumentMediaType"
+      },
+      "ImageMediaType" : {
+        "type" : "string",
+        "enum" : [ "jpeg", "png", "gif", "webp", "heic", "heif", "svg" ],
+        "title" : "ImageMediaType"
+      },
+      "ImageDetail" : {
+        "type" : "string",
+        "enum" : [ "low", "high", "auto" ],
+        "title" : "ImageDetail"
+      },
+      "VideoMediaType" : {
+        "type" : "string",
+        "enum" : [ "avi", "mp4", "mpeg" ],
+        "title" : "VideoMediaType"
+      },
+      "AudioAssistant" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        },
+        "required" : [ "id" ],
+        "title" : "AudioAssistant"
+      },
+      "ToolCall" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "type" : {
+            "$ref" : "#/components/schemas/ToolType"
+          },
+          "function" : {
+            "$ref" : "#/components/schemas/Function"
+          }
+        },
+        "required" : [ "function", "id", "type" ],
+        "title" : "ToolCall"
+      },
+      "ToolType" : {
+        "type" : "string",
+        "enum" : [ "function" ],
+        "title" : "ToolType"
+      },
+      "Function" : {
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "arguments" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        },
+        "required" : [ "arguments", "name" ],
+        "title" : "Function"
+      },
+      "OpenAISystemContent" : {
+        "type" : "object",
+        "properties" : {
+          "type" : {
+            "$ref" : "#/components/schemas/SystemContentType"
+          },
+          "text" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        },
+        "required" : [ "text", "type" ],
+        "title" : "OpenAISystemContent"
+      },
+      "SystemContentType" : {
+        "type" : "string",
+        "enum" : [ "text" ],
+        "title" : "SystemContentType"
+      },
+      "OpenAIToolResultContent" : {
+        "type" : "object",
+        "properties" : {
+          "type" : {
+            "$ref" : "#/components/schemas/ToolResultContentType"
+          },
+          "text" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        },
+        "required" : [ "text", "type" ],
+        "title" : "OpenAIToolResultContent"
+      },
+      "ToolResultContentType" : {
+        "type" : "string",
+        "enum" : [ "text" ],
+        "title" : "ToolResultContentType"
+      },
+      "InputAudio" : {
+        "type" : "object",
+        "properties" : {
+          "data" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "format" : {
+            "$ref" : "#/components/schemas/AudioMediaType"
+          }
+        },
+        "required" : [ "data", "format" ],
+        "title" : "InputAudio"
+      },
+      "ImageUrl" : {
+        "type" : "object",
+        "properties" : {
+          "url" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "detail" : {
+            "$ref" : "#/components/schemas/ImageDetail"
+          }
+        },
+        "required" : [ "detail", "url" ],
+        "title" : "ImageUrl"
+      },
+      "Telemetry" : {
+        "type" : "object",
+        "properties" : {
+          "model_description" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "preamble" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "resources" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Document"
+            },
+            "title" : "ArrayList<Document>"
+          },
+          "tools" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Document"
+            },
+            "title" : "ArrayList<Document>"
+          },
+          "temperature" : {
+            "type" : "number",
+            "format" : "double",
+            "title" : "Double"
+          },
+          "max_tokens" : {
+            "type" : "integer",
+            "format" : "int64",
+            "title" : "Long"
+          },
+          "additional_params" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "$ref" : "#/components/schemas/JsonElement"
+            },
+            "title" : "JsonObject<String,JsonElement>"
+          },
+          "messages" : {
+            "anyOf" : [ {
+              "type" : "object",
+              "properties" : {
+                "format" : {
+                  "type" : "string",
+                  "enum" : [ "Generic" ],
+                  "title" : "String"
+                },
+                "data" : {
+                  "type" : "array",
+                  "items" : {
+                    "anyOf" : [ {
+                      "type" : "object",
+                      "properties" : {
+                        "role" : {
+                          "type" : "string",
+                          "enum" : [ "assistant" ],
+                          "title" : "String"
+                        },
+                        "id" : {
+                          "type" : "string",
+                          "title" : "String"
+                        },
+                        "content" : {
+                          "type" : "array",
+                          "items" : {
+                            "anyOf" : [ {
+                              "type" : "object",
+                              "properties" : {
+                                "type" : {
+                                  "type" : "string",
+                                  "enum" : [ "assistant_reasoning" ],
+                                  "title" : "String"
+                                },
+                                "reasoning" : {
+                                  "type" : "array",
+                                  "items" : {
+                                    "type" : "string",
+                                    "title" : "String"
+                                  },
+                                  "title" : "ArrayList<String>"
+                                }
+                              },
+                              "required" : [ "reasoning", "type" ],
+                              "title" : "assistant_reasoning"
+                            }, {
+                              "type" : "object",
+                              "properties" : {
+                                "type" : {
+                                  "type" : "string",
+                                  "enum" : [ "assistant_text" ],
+                                  "title" : "String"
+                                },
+                                "text" : {
+                                  "type" : "string",
+                                  "title" : "String"
+                                }
+                              },
+                              "required" : [ "text", "type" ],
+                              "title" : "assistant_text"
+                            }, {
+                              "type" : "object",
+                              "properties" : {
+                                "type" : {
+                                  "type" : "string",
+                                  "enum" : [ "assistant_tool_call" ],
+                                  "title" : "String"
+                                },
+                                "id" : {
+                                  "type" : "string",
+                                  "title" : "String"
+                                },
+                                "call_id" : {
+                                  "type" : "string",
+                                  "title" : "String"
+                                },
+                                "function" : {
+                                  "$ref" : "#/components/schemas/ToolFunction"
+                                }
+                              },
+                              "required" : [ "function", "id", "type" ],
+                              "title" : "assistant_tool_call"
+                            } ],
+                            "discriminator" : {
+                              "propertyName" : "type"
+                            },
+                            "title" : "GenericAssistantContent"
+                          },
+                          "title" : "ArrayList<GenericAssistantContent>"
+                        }
+                      },
+                      "required" : [ "content", "role" ],
+                      "title" : "assistant"
+                    }, {
+                      "type" : "object",
+                      "properties" : {
+                        "role" : {
+                          "type" : "string",
+                          "enum" : [ "user" ],
+                          "title" : "String"
+                        },
+                        "content" : {
+                          "type" : "array",
+                          "items" : {
+                            "anyOf" : [ {
+                              "type" : "object",
+                              "properties" : {
+                                "type" : {
+                                  "type" : "string",
+                                  "enum" : [ "audio" ],
+                                  "title" : "String"
+                                },
+                                "data" : {
+                                  "type" : "string",
+                                  "title" : "String"
+                                },
+                                "format" : {
+                                  "$ref" : "#/components/schemas/ContentFormat"
+                                },
+                                "media_type" : {
+                                  "$ref" : "#/components/schemas/AudioMediaType"
+                                }
+                              },
+                              "required" : [ "data", "type" ],
+                              "title" : "audio"
+                            }, {
+                              "type" : "object",
+                              "properties" : {
+                                "type" : {
+                                  "type" : "string",
+                                  "enum" : [ "document" ],
+                                  "title" : "String"
+                                },
+                                "data" : {
+                                  "type" : "string",
+                                  "title" : "String"
+                                },
+                                "format" : {
+                                  "$ref" : "#/components/schemas/ContentFormat"
+                                },
+                                "media_type" : {
+                                  "$ref" : "#/components/schemas/DocumentMediaType"
+                                }
+                              },
+                              "required" : [ "data", "type" ],
+                              "title" : "document"
+                            }, {
+                              "type" : "object",
+                              "properties" : {
+                                "type" : {
+                                  "type" : "string",
+                                  "enum" : [ "image" ],
+                                  "title" : "String"
+                                },
+                                "data" : {
+                                  "type" : "string",
+                                  "title" : "String"
+                                },
+                                "format" : {
+                                  "$ref" : "#/components/schemas/ContentFormat"
+                                },
+                                "media_type" : {
+                                  "$ref" : "#/components/schemas/ImageMediaType"
+                                },
+                                "detail" : {
+                                  "$ref" : "#/components/schemas/ImageDetail"
+                                }
+                              },
+                              "required" : [ "data", "type" ],
+                              "title" : "image"
+                            }, {
+                              "type" : "object",
+                              "properties" : {
+                                "type" : {
+                                  "type" : "string",
+                                  "enum" : [ "text" ],
+                                  "title" : "String"
+                                },
+                                "text" : {
+                                  "type" : "string",
+                                  "title" : "String"
+                                }
+                              },
+                              "required" : [ "text", "type" ],
+                              "title" : "text"
+                            }, {
+                              "type" : "object",
+                              "properties" : {
+                                "type" : {
+                                  "type" : "string",
+                                  "enum" : [ "tool_result" ],
+                                  "title" : "String"
+                                },
+                                "id" : {
+                                  "type" : "string",
+                                  "title" : "String"
+                                },
+                                "call_id" : {
+                                  "type" : "string",
+                                  "title" : "String"
+                                },
+                                "content" : {
+                                  "type" : "array",
+                                  "items" : {
+                                    "anyOf" : [ {
+                                      "type" : "object",
+                                      "properties" : {
+                                        "type" : {
+                                          "type" : "string",
+                                          "enum" : [ "tool_image" ],
+                                          "title" : "String"
+                                        },
+                                        "data" : {
+                                          "type" : "string",
+                                          "title" : "String"
+                                        },
+                                        "format" : {
+                                          "$ref" : "#/components/schemas/ContentFormat"
+                                        },
+                                        "media_type" : {
+                                          "$ref" : "#/components/schemas/ImageMediaType"
+                                        },
+                                        "detail" : {
+                                          "$ref" : "#/components/schemas/ImageDetail"
+                                        }
+                                      },
+                                      "required" : [ "data", "type" ],
+                                      "title" : "tool_image"
+                                    }, {
+                                      "type" : "object",
+                                      "properties" : {
+                                        "type" : {
+                                          "type" : "string",
+                                          "enum" : [ "tool_text" ],
+                                          "title" : "String"
+                                        },
+                                        "text" : {
+                                          "type" : "string",
+                                          "title" : "String"
+                                        }
+                                      },
+                                      "required" : [ "text", "type" ],
+                                      "title" : "tool_text"
+                                    } ],
+                                    "discriminator" : {
+                                      "propertyName" : "type"
+                                    },
+                                    "title" : "GenericToolResultContent"
+                                  },
+                                  "title" : "ArrayList<GenericToolResultContent>"
+                                }
+                              },
+                              "required" : [ "content", "id", "type" ],
+                              "title" : "tool_result"
+                            }, {
+                              "type" : "object",
+                              "properties" : {
+                                "type" : {
+                                  "type" : "string",
+                                  "enum" : [ "video" ],
+                                  "title" : "String"
+                                },
+                                "data" : {
+                                  "type" : "string",
+                                  "title" : "String"
+                                },
+                                "format" : {
+                                  "$ref" : "#/components/schemas/ContentFormat"
+                                },
+                                "media_type" : {
+                                  "$ref" : "#/components/schemas/VideoMediaType"
+                                }
+                              },
+                              "required" : [ "data", "type" ],
+                              "title" : "video"
+                            } ],
+                            "discriminator" : {
+                              "propertyName" : "type"
+                            },
+                            "title" : "GenericUserContent"
+                          },
+                          "title" : "ArrayList<GenericUserContent>"
+                        }
+                      },
+                      "required" : [ "content", "role" ],
+                      "title" : "user"
+                    } ],
+                    "discriminator" : {
+                      "propertyName" : "role"
+                    },
+                    "title" : "GenericMessage"
+                  },
+                  "title" : "ArrayList<GenericMessage>"
+                }
+              },
+              "required" : [ "data", "format" ],
+              "title" : "Generic"
+            }, {
+              "type" : "object",
+              "properties" : {
+                "format" : {
+                  "type" : "string",
+                  "enum" : [ "OpenAI" ],
+                  "title" : "String"
+                },
+                "data" : {
+                  "type" : "array",
+                  "items" : {
+                    "anyOf" : [ {
+                      "type" : "object",
+                      "properties" : {
+                        "role" : {
+                          "type" : "string",
+                          "enum" : [ "assistant" ],
+                          "title" : "String"
+                        },
+                        "content" : {
+                          "type" : "array",
+                          "items" : {
+                            "anyOf" : [ {
+                              "type" : "object",
+                              "properties" : {
+                                "type" : {
+                                  "type" : "string",
+                                  "enum" : [ "refusal" ],
+                                  "title" : "String"
+                                },
+                                "refusal" : {
+                                  "type" : "string",
+                                  "title" : "String"
+                                }
+                              },
+                              "required" : [ "refusal", "type" ],
+                              "title" : "refusal"
+                            }, {
+                              "type" : "object",
+                              "properties" : {
+                                "type" : {
+                                  "type" : "string",
+                                  "enum" : [ "text" ],
+                                  "title" : "String"
+                                },
+                                "text" : {
+                                  "type" : "string",
+                                  "title" : "String"
+                                }
+                              },
+                              "required" : [ "text", "type" ],
+                              "title" : "text"
+                            } ],
+                            "discriminator" : {
+                              "propertyName" : "type"
+                            },
+                            "title" : "OpenAIAssistantContent"
+                          },
+                          "title" : "ArrayList<OpenAIAssistantContent>"
+                        },
+                        "refusal" : {
+                          "type" : "string",
+                          "title" : "String"
+                        },
+                        "audio" : {
+                          "$ref" : "#/components/schemas/AudioAssistant"
+                        },
+                        "name" : {
+                          "type" : "string",
+                          "title" : "String"
+                        },
+                        "tool_calls" : {
+                          "type" : "array",
+                          "items" : {
+                            "$ref" : "#/components/schemas/ToolCall"
+                          },
+                          "title" : "ArrayList<ToolCall>"
+                        }
+                      },
+                      "required" : [ "content", "role", "tool_calls" ],
+                      "title" : "assistant"
+                    }, {
+                      "type" : "object",
+                      "properties" : {
+                        "role" : {
+                          "type" : "string",
+                          "enum" : [ "developer" ],
+                          "title" : "String"
+                        },
+                        "content" : {
+                          "type" : "array",
+                          "items" : {
+                            "$ref" : "#/components/schemas/OpenAISystemContent"
+                          },
+                          "title" : "ArrayList<OpenAISystemContent>"
+                        },
+                        "name" : {
+                          "type" : "string",
+                          "title" : "String"
+                        }
+                      },
+                      "required" : [ "content", "role" ],
+                      "title" : "developer"
+                    }, {
+                      "type" : "object",
+                      "properties" : {
+                        "role" : {
+                          "type" : "string",
+                          "enum" : [ "tool" ],
+                          "title" : "String"
+                        },
+                        "tool_call_id" : {
+                          "type" : "string",
+                          "title" : "String"
+                        },
+                        "content" : {
+                          "type" : "array",
+                          "items" : {
+                            "$ref" : "#/components/schemas/OpenAIToolResultContent"
+                          },
+                          "title" : "ArrayList<OpenAIToolResultContent>"
+                        }
+                      },
+                      "required" : [ "content", "role", "tool_call_id" ],
+                      "title" : "tool"
+                    }, {
+                      "type" : "object",
+                      "properties" : {
+                        "role" : {
+                          "type" : "string",
+                          "enum" : [ "user" ],
+                          "title" : "String"
+                        },
+                        "content" : {
+                          "type" : "array",
+                          "items" : {
+                            "anyOf" : [ {
+                              "type" : "object",
+                              "properties" : {
+                                "type" : {
+                                  "type" : "string",
+                                  "enum" : [ "audio" ],
+                                  "title" : "String"
+                                },
+                                "input_audio" : {
+                                  "$ref" : "#/components/schemas/InputAudio"
+                                }
+                              },
+                              "required" : [ "input_audio", "type" ],
+                              "title" : "audio"
+                            }, {
+                              "type" : "object",
+                              "properties" : {
+                                "type" : {
+                                  "type" : "string",
+                                  "enum" : [ "image_url" ],
+                                  "title" : "String"
+                                },
+                                "image_url" : {
+                                  "$ref" : "#/components/schemas/ImageUrl"
+                                }
+                              },
+                              "required" : [ "image_url", "type" ],
+                              "title" : "image_url"
+                            }, {
+                              "type" : "object",
+                              "properties" : {
+                                "type" : {
+                                  "type" : "string",
+                                  "enum" : [ "text" ],
+                                  "title" : "String"
+                                },
+                                "text" : {
+                                  "type" : "string",
+                                  "title" : "String"
+                                }
+                              },
+                              "required" : [ "text", "type" ],
+                              "title" : "text"
+                            } ],
+                            "discriminator" : {
+                              "propertyName" : "type"
+                            },
+                            "title" : "OpenAIUserContent"
+                          },
+                          "title" : "ArrayList<OpenAIUserContent>"
+                        },
+                        "name" : {
+                          "type" : "string",
+                          "title" : "String"
+                        }
+                      },
+                      "required" : [ "content", "role" ],
+                      "title" : "user"
+                    } ],
+                    "discriminator" : {
+                      "propertyName" : "role"
+                    },
+                    "title" : "OpenAIMessage"
+                  },
+                  "title" : "ArrayList<OpenAIMessage>"
+                }
+              },
+              "required" : [ "data", "format" ],
+              "title" : "OpenAI"
+            } ],
+            "discriminator" : {
+              "propertyName" : "format"
+            },
+            "title" : "TelemetryMessages"
+          }
+        },
+        "required" : [ "messages", "model_description", "resources", "tools" ],
+        "title" : "Telemetry"
+      },
+      "TelemetryTarget" : {
+        "type" : "object",
+        "properties" : {
+          "thread_id" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "message_id" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        },
+        "required" : [ "message_id", "thread_id" ],
+        "title" : "TelemetryTarget"
+      },
+      "TelemetryPost" : {
+        "type" : "object",
+        "properties" : {
+          "targets" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/TelemetryTarget"
+            },
+            "title" : "ArrayList<TelemetryTarget>"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/Telemetry"
+          }
+        },
+        "required" : [ "data", "targets" ],
+        "title" : "TelemetryPost"
+      },
+      "PublicRegistryAgent" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "options" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "$ref" : "#/components/schemas/ConfigEntry"
+            },
+            "title" : "LinkedHashMap<String,ConfigEntry>"
+          }
+        },
+        "required" : [ "id", "options" ],
+        "title" : "PublicRegistryAgent"
+      },
+      "ConfigEntry" : {
+        "anyOf" : [ {
+          "type" : "object",
+          "properties" : {
+            "name" : {
+              "type" : "string",
+              "title" : "String"
+            },
+            "description" : {
+              "type" : "string",
+              "title" : "String"
+            },
+            "default" : {
+              "type" : "number",
+              "format" : "double",
+              "title" : "Double"
+            }
+          },
+          "required" : [ "name" ],
+          "title" : "number"
+        }, {
+          "type" : "object",
+          "properties" : {
+            "name" : {
+              "type" : "string",
+              "title" : "String"
+            },
+            "description" : {
+              "type" : "string",
+              "title" : "String"
+            }
+          },
+          "required" : [ "name" ],
+          "title" : "secret"
+        }, {
+          "type" : "object",
+          "properties" : {
+            "name" : {
+              "type" : "string",
+              "title" : "String"
+            },
+            "description" : {
+              "type" : "string",
+              "title" : "String"
+            },
+            "default" : {
+              "type" : "string",
+              "title" : "String"
+            }
+          },
+          "required" : [ "name" ],
+          "title" : "string"
+        } ],
+        "title" : "ConfigEntry"
+      }
+    },
+    "examples" : { }
+  },
+  "webhooks" : { }
+}
