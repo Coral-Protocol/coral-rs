@@ -109,7 +109,7 @@ impl<M: CompletionModel> Agent<M> {
         // Remove any tooling that revalidates
         self.revalidating_tooling.retain(|mcp_tool_name| {
             self.completion_agent.static_tools.retain(|tool_name| tool_name != mcp_tool_name);
-            // TODO: remove from self.completion_agent.tools when Rig allows it
+            self.completion_agent.tools.delete_tool(mcp_tool_name);
             false
         });
 
