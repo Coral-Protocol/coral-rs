@@ -10,6 +10,164 @@
   "servers" : [ ],
   "tags" : [ ],
   "paths" : {
+    "/api/v1/debug/thread/{applicationId}/{privacyKey}/{coralSessionId}/{debugAgentId}" : {
+      "post" : {
+        "tags" : [ "debug" ],
+        "summary" : "Create thread",
+        "description" : "Creates a new thread",
+        "operationId" : "debugCreateThread",
+        "parameters" : [ {
+          "name" : "applicationId",
+          "in" : "path",
+          "description" : "The application ID",
+          "required" : true,
+          "deprecated" : false,
+          "explode" : false,
+          "schema" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        }, {
+          "name" : "privacyKey",
+          "in" : "path",
+          "description" : "The privacy key",
+          "required" : true,
+          "deprecated" : false,
+          "explode" : false,
+          "schema" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        }, {
+          "name" : "coralSessionId",
+          "in" : "path",
+          "description" : "The Coral session ID",
+          "required" : true,
+          "deprecated" : false,
+          "explode" : false,
+          "schema" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        }, {
+          "name" : "debugAgentId",
+          "in" : "path",
+          "description" : "The debug agent ID",
+          "required" : true,
+          "deprecated" : false,
+          "explode" : false,
+          "schema" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        } ],
+        "requestBody" : {
+          "description" : "Thread creation request",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateThreadInput"
+              }
+            }
+          },
+          "required" : false
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Thread created successfully",
+            "headers" : { }
+          },
+          "404" : {
+            "description" : "Session not found",
+            "headers" : { }
+          },
+          "500" : {
+            "description" : "Error creating thread",
+            "headers" : { }
+          }
+        },
+        "deprecated" : false
+      }
+    },
+    "/api/v1/debug/thread/sendMessage/{applicationId}/{privacyKey}/{coralSessionId}/{debugAgentId}" : {
+      "post" : {
+        "tags" : [ "debug" ],
+        "summary" : "Send message",
+        "description" : "Sends a message in debug mode",
+        "operationId" : "debugSendMessage",
+        "parameters" : [ {
+          "name" : "applicationId",
+          "in" : "path",
+          "description" : "The application ID",
+          "required" : true,
+          "deprecated" : false,
+          "explode" : false,
+          "schema" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        }, {
+          "name" : "privacyKey",
+          "in" : "path",
+          "description" : "The privacy key",
+          "required" : true,
+          "deprecated" : false,
+          "explode" : false,
+          "schema" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        }, {
+          "name" : "coralSessionId",
+          "in" : "path",
+          "description" : "The Coral session ID",
+          "required" : true,
+          "deprecated" : false,
+          "explode" : false,
+          "schema" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        }, {
+          "name" : "debugAgentId",
+          "in" : "path",
+          "description" : "The debug agent ID",
+          "required" : true,
+          "deprecated" : false,
+          "explode" : false,
+          "schema" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        } ],
+        "requestBody" : {
+          "description" : "The message to send",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SendMessageInput"
+              }
+            }
+          },
+          "required" : false
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Message sent successfully",
+            "headers" : { }
+          },
+          "404" : {
+            "description" : "Session not found",
+            "headers" : { }
+          },
+          "500" : {
+            "description" : "Error sending message",
+            "headers" : { }
+          }
+        },
+        "deprecated" : false
+      }
+    },
     "/api/v1/sessions" : {
       "get" : {
         "tags" : [ "sessions" ],
@@ -66,8 +224,12 @@
               }
             }
           },
-          "400" : {
+          "403" : {
             "description" : "Invalid application ID or privacy key",
+            "headers" : { }
+          },
+          "400" : {
+            "description" : "The agent graph is invalid and could not be processed",
             "headers" : { }
           }
         },
@@ -301,9 +463,9 @@
     "/api/v1/agents" : {
       "get" : {
         "tags" : [ "agents" ],
-        "summary" : "Get agent registry",
-        "description" : "Fetches a list of available agents",
-        "operationId" : "getAgentRegistry",
+        "summary" : "Get available agents",
+        "description" : "Fetches a list of all agents available to the Coral server",
+        "operationId" : "getAvailableAgents",
         "parameters" : [ ],
         "responses" : {
           "200" : {
@@ -324,146 +486,154 @@
         },
         "deprecated" : false
       }
+    },
+    "/api/v1/agents/exported" : {
+      "get" : {
+        "tags" : [ "agents" ],
+        "summary" : "Gets exported agents",
+        "description" : "Fetches agents the Coral server has exported to other servers",
+        "operationId" : "getExportedAgents",
+        "parameters" : [ ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/AgentExport"
+                  },
+                  "title" : "ArrayList<AgentExport>"
+                }
+              }
+            }
+          }
+        },
+        "deprecated" : false
+      }
     }
   },
   "components" : {
     "schemas" : {
-      "AgentGraphRequest" : {
-        "type" : "object",
-        "properties" : {
-          "agents" : {
-            "type" : "object",
-            "additionalProperties" : {
-              "$ref" : "#/components/schemas/GraphAgentRequest"
-            },
-            "title" : "HashMap<AgentName,GraphAgentRequest>"
-          },
-          "links" : {
-            "type" : "array",
-            "items" : {
-              "type" : "array",
-              "items" : {
-                "type" : "string",
-                "title" : "String"
-              },
-              "title" : "LinkedHashSet<String>",
-              "uniqueItems" : true
-            },
-            "title" : "LinkedHashSet<LinkedHashSet<String>>",
-            "uniqueItems" : true
-          },
-          "tools" : {
-            "type" : "object",
-            "additionalProperties" : {
-              "$ref" : "#/components/schemas/CustomTool"
-            },
-            "title" : "LinkedHashMap<String,CustomTool>"
-          }
-        },
-        "required" : [ "agents", "links", "tools" ],
-        "title" : "AgentGraphRequest"
-      },
-      "GraphAgentRequest" : {
+      "SocketEvent" : {
         "anyOf" : [ {
           "type" : "object",
           "properties" : {
-            "agentType" : {
+            "type" : {
               "type" : "string",
-              "title" : "AgentType"
-            },
-            "options" : {
-              "type" : "object",
-              "additionalProperties" : {
-                "type" : "string",
-                "title" : "JsonPrimitive"
-              },
-              "title" : "LinkedHashMap<String,JsonPrimitive>"
-            },
-            "systemPrompt" : {
-              "type" : "string",
+              "enum" : [ "agent_list" ],
               "title" : "String"
             },
-            "tools" : {
+            "agents" : {
               "type" : "array",
               "items" : {
-                "type" : "string",
-                "title" : "String"
+                "$ref" : "#/components/schemas/Agent"
               },
-              "title" : "LinkedHashSet<String>",
-              "uniqueItems" : true
-            },
-            "blocking" : {
-              "type" : "boolean",
-              "title" : "Boolean"
+              "title" : "ArrayList<Agent>"
             }
           },
-          "required" : [ "agentType", "options", "tools" ],
-          "title" : "local"
+          "required" : [ "agents", "type" ],
+          "title" : "agent_list"
         }, {
           "type" : "object",
           "properties" : {
-            "remote" : {
-              "$ref" : "#/components/schemas/remote"
-            },
-            "options" : {
-              "type" : "object",
-              "additionalProperties" : {
-                "type" : "string",
-                "title" : "JsonPrimitive"
-              },
-              "title" : "LinkedHashMap<String,JsonPrimitive>"
-            },
-            "systemPrompt" : {
+            "type" : {
               "type" : "string",
+              "enum" : [ "debug_agent_registered" ],
               "title" : "String"
             },
-            "tools" : {
-              "type" : "array",
-              "items" : {
-                "type" : "string",
-                "title" : "String"
-              },
-              "title" : "LinkedHashSet<String>",
-              "uniqueItems" : true
-            },
-            "blocking" : {
-              "type" : "boolean",
-              "title" : "Boolean"
+            "id" : {
+              "type" : "string",
+              "title" : "String"
             }
           },
-          "required" : [ "options", "remote", "tools" ],
-          "title" : "remote"
+          "required" : [ "id", "type" ],
+          "title" : "debug_agent_registered"
+        }, {
+          "type" : "object",
+          "properties" : {
+            "type" : {
+              "type" : "string",
+              "enum" : [ "thread_list" ],
+              "title" : "String"
+            },
+            "threads" : {
+              "type" : "array",
+              "items" : {
+                "$ref" : "#/components/schemas/ResolvedThread"
+              },
+              "title" : "ArrayList<ResolvedThread>"
+            }
+          },
+          "required" : [ "threads", "type" ],
+          "title" : "thread_list"
         } ],
-        "title" : "GraphAgentRequest"
+        "discriminator" : {
+          "propertyName" : "type"
+        },
+        "title" : "SocketEvent"
       },
-      "remote" : {
+      "Agent" : {
         "type" : "object",
         "properties" : {
-          "host" : {
+          "id" : {
             "type" : "string",
             "title" : "String"
           },
-          "agentType" : {
+          "description" : {
             "type" : "string",
             "title" : "String"
           },
-          "appId" : {
+          "state" : {
+            "$ref" : "#/components/schemas/AgentState"
+          },
+          "mcpUrl" : {
             "type" : "string",
             "title" : "String"
           },
-          "privacyKey" : {
-            "type" : "string",
-            "title" : "String"
+          "extraTools" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/CustomTool"
+            },
+            "title" : "LinkedHashSet<CustomTool>",
+            "uniqueItems" : true
           }
         },
-        "required" : [ "agentType", "appId", "host", "privacyKey" ],
-        "title" : "remote"
+        "required" : [ "description", "extraTools", "id", "state" ],
+        "title" : "Agent"
+      },
+      "AgentState" : {
+        "type" : "string",
+        "enum" : [ "disconnected", "connecting", "listening", "busy", "dead" ],
+        "title" : "AgentState"
       },
       "CustomTool" : {
         "type" : "object",
         "properties" : {
           "transport" : {
-            "$ref" : "#/components/schemas/ToolTransport"
+            "anyOf" : [ {
+              "type" : "object",
+              "properties" : {
+                "type" : {
+                  "type" : "string",
+                  "enum" : [ "http" ],
+                  "title" : "String"
+                },
+                "url" : {
+                  "type" : "string",
+                  "title" : "UriString"
+                }
+              },
+              "required" : [ "type", "url" ],
+              "title" : "http"
+            } ],
+            "discriminator" : {
+              "propertyName" : "type"
+            },
+            "title" : "ToolTransport"
           },
           "toolSchema" : {
             "$ref" : "#/components/schemas/Tool"
@@ -471,20 +641,6 @@
         },
         "required" : [ "toolSchema", "transport" ],
         "title" : "CustomTool"
-      },
-      "ToolTransport" : {
-        "anyOf" : [ {
-          "type" : "object",
-          "properties" : {
-            "url" : {
-              "type" : "string",
-              "title" : "UriString"
-            }
-          },
-          "required" : [ "url" ],
-          "title" : "http"
-        } ],
-        "title" : "ToolTransport"
       },
       "Tool" : {
         "type" : "object",
@@ -534,6 +690,564 @@
         "type" : "object",
         "properties" : { },
         "title" : "JsonElement"
+      },
+      "ResolvedThread" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "name" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "creatorId" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "participants" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "title" : "String"
+            },
+            "title" : "ArrayList<String>"
+          },
+          "messages" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ResolvedMessage"
+            },
+            "title" : "ArrayList<ResolvedMessage>"
+          },
+          "isClosed" : {
+            "type" : "boolean",
+            "title" : "Boolean"
+          },
+          "summary" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        },
+        "required" : [ "creatorId", "id", "isClosed", "messages", "name", "participants" ],
+        "title" : "ResolvedThread"
+      },
+      "ResolvedMessage" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "threadName" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "threadId" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "senderId" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "content" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "timestamp" : {
+            "type" : "integer",
+            "format" : "int64",
+            "title" : "Long"
+          },
+          "mentions" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "title" : "String"
+            },
+            "title" : "ArrayList<String>"
+          }
+        },
+        "required" : [ "content", "id", "mentions", "senderId", "threadId", "threadName", "timestamp" ],
+        "title" : "ResolvedMessage"
+      },
+      "CreateThreadInput" : {
+        "type" : "object",
+        "properties" : {
+          "threadName" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "participantIds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "title" : "String"
+            },
+            "title" : "ArrayList<String>"
+          }
+        },
+        "required" : [ "participantIds", "threadName" ],
+        "title" : "CreateThreadInput"
+      },
+      "SendMessageInput" : {
+        "type" : "object",
+        "properties" : {
+          "threadId" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "content" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "mentions" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "title" : "String"
+            },
+            "title" : "ArrayList<String>"
+          }
+        },
+        "required" : [ "content", "mentions", "threadId" ],
+        "title" : "SendMessageInput"
+      },
+      "AgentGraphRequest" : {
+        "type" : "object",
+        "properties" : {
+          "agents" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "$ref" : "#/components/schemas/GraphAgentRequest"
+            },
+            "title" : "HashMap<String,GraphAgentRequest>"
+          },
+          "links" : {
+            "type" : "array",
+            "items" : {
+              "type" : "array",
+              "items" : {
+                "type" : "string",
+                "title" : "String"
+              },
+              "title" : "LinkedHashSet<String>",
+              "uniqueItems" : true
+            },
+            "title" : "LinkedHashSet<LinkedHashSet<String>>",
+            "uniqueItems" : true
+          },
+          "tools" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "$ref" : "#/components/schemas/CustomTool"
+            },
+            "title" : "LinkedHashMap<String,CustomTool>"
+          }
+        },
+        "required" : [ "agents", "links", "tools" ],
+        "title" : "AgentGraphRequest"
+      },
+      "GraphAgentRequest" : {
+        "type" : "object",
+        "description" : "A request for an agent",
+        "properties" : {
+          "agent_name" : {
+            "type" : "string",
+            "description" : "The name of the agent to run, this must match the name of the agent in the registry",
+            "title" : "String"
+          },
+          "options" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string",
+              "title" : "JsonPrimitive"
+            },
+            "description" : "The arguments to pass to the agent",
+            "title" : "LinkedHashMap<String,JsonPrimitive>"
+          },
+          "blocking" : {
+            "type" : "boolean",
+            "description" : "<todo description>",
+            "title" : "Boolean"
+          },
+          "tools" : {
+            "type" : "array",
+            "description" : "<todo description>",
+            "items" : {
+              "type" : "string",
+              "title" : "String"
+            },
+            "title" : "LinkedHashSet<String>",
+            "uniqueItems" : true
+          },
+          "provider" : {
+            "anyOf" : [ {
+              "type" : "object",
+              "description" : "The agent will be provided by this server",
+              "properties" : {
+                "type" : {
+                  "type" : "string",
+                  "enum" : [ "local" ],
+                  "title" : "String"
+                },
+                "runtime" : {
+                  "$ref" : "#/components/schemas/RuntimeId"
+                }
+              },
+              "required" : [ "runtime", "type" ],
+              "title" : "local"
+            }, {
+              "type" : "object",
+              "description" : "Agent will be provided by another Coral server",
+              "properties" : {
+                "type" : {
+                  "type" : "string",
+                  "enum" : [ "remote" ],
+                  "title" : "String"
+                },
+                "runtime" : {
+                  "$ref" : "#/components/schemas/RuntimeId",
+                  "description" : "The runtime that should be used for this remote agent.  Servers can export only specific runtimes so the runtime choice may narrow servers that can adequately provide the agent"
+                },
+                "server_source" : {
+                  "$ref" : "#/components/schemas/GraphAgentServerSource",
+                  "description" : "A description of which servers should be queried for this remote agent request"
+                },
+                "server_scoring" : {
+                  "anyOf" : [ {
+                    "type" : "object",
+                    "description" : "Custom server scoring.  Weights can be added on a flat or multiplier basis per attribute",
+                    "properties" : {
+                      "type" : {
+                        "type" : "string",
+                        "enum" : [ "custom" ],
+                        "title" : "String"
+                      },
+                      "scorers" : {
+                        "type" : "array",
+                        "items" : {
+                          "anyOf" : [ {
+                            "type" : "object",
+                            "description" : "The effect will be applied for every attribute of the specified type with a boolean false value",
+                            "properties" : {
+                              "op" : {
+                                "type" : "string",
+                                "enum" : [ "is_false" ],
+                                "title" : "String"
+                              },
+                              "type" : {
+                                "$ref" : "#/components/schemas/GraphAgentServerAttributeType"
+                              },
+                              "effect" : {
+                                "$ref" : "#/components/schemas/flat",
+                                "description" : "A flat negative or positive weight"
+                              }
+                            },
+                            "required" : [ "effect", "op", "type" ],
+                            "title" : "is_false"
+                          }, {
+                            "type" : "object",
+                            "description" : "The effect will be applied if the no attribute of the specified type is present",
+                            "properties" : {
+                              "op" : {
+                                "type" : "string",
+                                "enum" : [ "is_not_present" ],
+                                "title" : "String"
+                              },
+                              "type" : {
+                                "$ref" : "#/components/schemas/GraphAgentServerAttributeType"
+                              },
+                              "effect" : {
+                                "$ref" : "#/components/schemas/flat",
+                                "description" : "A flat negative or positive weight"
+                              }
+                            },
+                            "required" : [ "effect", "op", "type" ],
+                            "title" : "is_not_present"
+                          }, {
+                            "type" : "object",
+                            "description" : "The effect will be applied for every attribute of the specified type",
+                            "properties" : {
+                              "op" : {
+                                "type" : "string",
+                                "enum" : [ "is_present" ],
+                                "title" : "String"
+                              },
+                              "type" : {
+                                "$ref" : "#/components/schemas/GraphAgentServerAttributeType"
+                              },
+                              "effect" : {
+                                "$ref" : "#/components/schemas/GraphAgentServerScorerEffect"
+                              }
+                            },
+                            "required" : [ "effect", "op", "type" ],
+                            "title" : "is_present"
+                          }, {
+                            "type" : "object",
+                            "description" : "The effect will be applied for every attribute of the specified type with a boolean true value",
+                            "properties" : {
+                              "op" : {
+                                "type" : "string",
+                                "enum" : [ "is_true" ],
+                                "title" : "String"
+                              },
+                              "type" : {
+                                "$ref" : "#/components/schemas/GraphAgentServerAttributeType"
+                              },
+                              "effect" : {
+                                "$ref" : "#/components/schemas/flat",
+                                "description" : "A flat negative or positive weight"
+                              }
+                            },
+                            "required" : [ "effect", "op", "type" ],
+                            "title" : "is_true"
+                          }, {
+                            "type" : "object",
+                            "description" : "The effect will be applied for every attribute of the specified type with a matching string value",
+                            "properties" : {
+                              "op" : {
+                                "type" : "string",
+                                "enum" : [ "string_equal" ],
+                                "title" : "String"
+                              },
+                              "type" : {
+                                "$ref" : "#/components/schemas/GraphAgentServerAttributeType"
+                              },
+                              "string" : {
+                                "type" : "string",
+                                "title" : "String"
+                              },
+                              "effect" : {
+                                "$ref" : "#/components/schemas/flat",
+                                "description" : "A flat negative or positive weight"
+                              }
+                            },
+                            "required" : [ "effect", "op", "string", "type" ],
+                            "title" : "string_equal"
+                          }, {
+                            "type" : "object",
+                            "description" : "The effect will be applied for every attribute of the specified type with a non-matching string value",
+                            "properties" : {
+                              "op" : {
+                                "type" : "string",
+                                "enum" : [ "string_not_equal" ],
+                                "title" : "String"
+                              },
+                              "type" : {
+                                "$ref" : "#/components/schemas/GraphAgentServerAttributeType"
+                              },
+                              "string" : {
+                                "type" : "string",
+                                "title" : "String"
+                              },
+                              "effect" : {
+                                "$ref" : "#/components/schemas/flat",
+                                "description" : "A flat negative or positive weight"
+                              }
+                            },
+                            "required" : [ "effect", "op", "string", "type" ],
+                            "title" : "string_not_equal"
+                          } ],
+                          "discriminator" : {
+                            "propertyName" : "op"
+                          },
+                          "title" : "GraphAgentServerCustomScorer"
+                        },
+                        "title" : "ArrayList<GraphAgentServerCustomScorer>"
+                      }
+                    },
+                    "required" : [ "scorers", "type" ],
+                    "title" : "custom"
+                  }, {
+                    "type" : "object",
+                    "description" : "Default server scoring.  No weights assigned to any server attribute",
+                    "properties" : {
+                      "type" : {
+                        "type" : "string",
+                        "enum" : [ "default" ],
+                        "title" : "String"
+                      }
+                    },
+                    "required" : [ "type" ],
+                    "title" : "default"
+                  } ],
+                  "description" : "Customisation for the scoring of servers",
+                  "discriminator" : {
+                    "propertyName" : "type"
+                  },
+                  "title" : "GraphAgentServerScoring"
+                }
+              },
+              "required" : [ "runtime", "server_source", "type" ],
+              "title" : "remote"
+            } ],
+            "description" : "The server that should provide this agent and the runtime to use",
+            "discriminator" : {
+              "propertyName" : "type"
+            },
+            "title" : "GraphAgentProvider"
+          }
+        },
+        "required" : [ "agent_name", "options", "provider", "tools" ],
+        "title" : "GraphAgentRequest"
+      },
+      "RuntimeId" : {
+        "type" : "string",
+        "enum" : [ "executable", "docker" ],
+        "title" : "RuntimeId"
+      },
+      "GraphAgentServerSource" : {
+        "anyOf" : [ {
+          "type" : "object",
+          "properties" : {
+            "indexer" : {
+              "type" : "string",
+              "title" : "String"
+            }
+          },
+          "required" : [ "indexer" ],
+          "title" : "Indexer"
+        }, {
+          "type" : "object",
+          "properties" : {
+            "servers" : {
+              "type" : "array",
+              "items" : {
+                "$ref" : "#/components/schemas/GraphAgentServer"
+              },
+              "title" : "ArrayList<GraphAgentServer>"
+            }
+          },
+          "required" : [ "servers" ],
+          "title" : "servers"
+        } ],
+        "title" : "GraphAgentServerSource"
+      },
+      "GraphAgentServer" : {
+        "type" : "object",
+        "properties" : {
+          "address" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "attributes" : {
+            "type" : "array",
+            "items" : {
+              "anyOf" : [ {
+                "type" : "object",
+                "properties" : {
+                  "format" : {
+                    "type" : "string",
+                    "enum" : [ "boolean" ],
+                    "title" : "String"
+                  },
+                  "type" : {
+                    "$ref" : "#/components/schemas/GraphAgentServerAttributeType"
+                  },
+                  "value" : {
+                    "type" : "boolean",
+                    "title" : "Boolean"
+                  }
+                },
+                "required" : [ "format", "type", "value" ],
+                "title" : "boolean"
+              }, {
+                "type" : "object",
+                "properties" : {
+                  "format" : {
+                    "type" : "string",
+                    "enum" : [ "number" ],
+                    "title" : "String"
+                  },
+                  "type" : {
+                    "$ref" : "#/components/schemas/GraphAgentServerAttributeType"
+                  },
+                  "value" : {
+                    "type" : "number",
+                    "format" : "double",
+                    "title" : "Double"
+                  }
+                },
+                "required" : [ "format", "type", "value" ],
+                "title" : "number"
+              }, {
+                "type" : "object",
+                "properties" : {
+                  "format" : {
+                    "type" : "string",
+                    "enum" : [ "string" ],
+                    "title" : "String"
+                  },
+                  "type" : {
+                    "$ref" : "#/components/schemas/GraphAgentServerAttributeType"
+                  },
+                  "value" : {
+                    "type" : "string",
+                    "title" : "String"
+                  }
+                },
+                "required" : [ "format", "type", "value" ],
+                "title" : "string"
+              } ],
+              "discriminator" : {
+                "propertyName" : "format"
+              },
+              "title" : "GraphAgentServerAttribute"
+            },
+            "title" : "ArrayList<GraphAgentServerAttribute>"
+          }
+        },
+        "required" : [ "address", "attributes" ],
+        "title" : "GraphAgentServer"
+      },
+      "GraphAgentServerAttributeType" : {
+        "type" : "string",
+        "enum" : [ "geographic_location", "attested_by" ],
+        "title" : "GraphAgentServerAttributeType"
+      },
+      "flat" : {
+        "type" : "object",
+        "description" : "A flat negative or positive weight",
+        "properties" : {
+          "weight" : {
+            "type" : "number",
+            "format" : "double",
+            "title" : "Double"
+          }
+        },
+        "required" : [ "weight" ],
+        "title" : "flat"
+      },
+      "GraphAgentServerScorerEffect" : {
+        "anyOf" : [ {
+          "type" : "object",
+          "description" : "A flat negative or positive weight",
+          "properties" : {
+            "weight" : {
+              "type" : "number",
+              "format" : "double",
+              "title" : "Double"
+            }
+          },
+          "required" : [ "weight" ],
+          "title" : "flat"
+        }, {
+          "type" : "object",
+          "description" : "A multiplier weight, this effect will only multiply against attributes with a number type",
+          "properties" : {
+            "weight" : {
+              "type" : "number",
+              "format" : "double",
+              "title" : "Double"
+            }
+          },
+          "required" : [ "weight" ],
+          "title" : "multiplier"
+        } ],
+        "title" : "GraphAgentServerScorerEffect"
       },
       "CreateSessionRequest" : {
         "type" : "object",
@@ -1347,68 +2061,300 @@
           "options" : {
             "type" : "object",
             "additionalProperties" : {
-              "$ref" : "#/components/schemas/ConfigEntry"
+              "anyOf" : [ {
+                "type" : "object",
+                "properties" : {
+                  "type" : {
+                    "type" : "string",
+                    "enum" : [ "number" ],
+                    "title" : "String"
+                  },
+                  "description" : {
+                    "type" : "string",
+                    "title" : "String"
+                  },
+                  "default" : {
+                    "type" : "number",
+                    "format" : "double",
+                    "title" : "Double"
+                  },
+                  "required" : {
+                    "type" : "boolean",
+                    "title" : "Boolean"
+                  }
+                },
+                "required" : [ "required", "type" ],
+                "title" : "number"
+              }, {
+                "type" : "object",
+                "properties" : {
+                  "type" : {
+                    "type" : "string",
+                    "enum" : [ "secret" ],
+                    "title" : "String"
+                  },
+                  "description" : {
+                    "type" : "string",
+                    "title" : "String"
+                  },
+                  "required" : {
+                    "type" : "boolean",
+                    "title" : "Boolean"
+                  }
+                },
+                "required" : [ "required", "type" ],
+                "title" : "secret"
+              }, {
+                "type" : "object",
+                "properties" : {
+                  "type" : {
+                    "type" : "string",
+                    "enum" : [ "string" ],
+                    "title" : "String"
+                  },
+                  "description" : {
+                    "type" : "string",
+                    "title" : "String"
+                  },
+                  "default" : {
+                    "type" : "string",
+                    "title" : "String"
+                  },
+                  "required" : {
+                    "type" : "boolean",
+                    "title" : "Boolean"
+                  }
+                },
+                "required" : [ "required", "type" ],
+                "title" : "string"
+              } ],
+              "discriminator" : {
+                "propertyName" : "type"
+              },
+              "title" : "AgentOption"
             },
-            "title" : "LinkedHashMap<String,ConfigEntry>"
+            "title" : "LinkedHashMap<String,AgentOption>"
           }
         },
         "required" : [ "id", "options" ],
         "title" : "PublicRegistryAgent"
       },
-      "ConfigEntry" : {
-        "anyOf" : [ {
-          "type" : "object",
-          "properties" : {
-            "name" : {
-              "type" : "string",
-              "title" : "String"
-            },
-            "description" : {
-              "type" : "string",
-              "title" : "String"
-            },
-            "default" : {
-              "type" : "number",
-              "format" : "double",
-              "title" : "Double"
-            }
+      "AgentExport" : {
+        "type" : "object",
+        "properties" : {
+          "agent" : {
+            "$ref" : "#/components/schemas/RegistryAgent"
           },
-          "required" : [ "name" ],
-          "title" : "number"
-        }, {
-          "type" : "object",
-          "properties" : {
-            "name" : {
-              "type" : "string",
-              "title" : "String"
+          "runtimes" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "$ref" : "#/components/schemas/AgentExportPricing"
             },
-            "description" : {
-              "type" : "string",
-              "title" : "String"
-            }
+            "title" : "LinkedHashMap<RuntimeId,AgentExportPricing>"
           },
-          "required" : [ "name" ],
-          "title" : "secret"
-        }, {
-          "type" : "object",
-          "properties" : {
-            "name" : {
-              "type" : "string",
-              "title" : "String"
-            },
-            "description" : {
-              "type" : "string",
-              "title" : "String"
-            },
-            "default" : {
-              "type" : "string",
-              "title" : "String"
-            }
+          "quantity" : {
+            "type" : "integer",
+            "maximum" : 4294967295,
+            "minimum" : 0,
+            "title" : "UInt"
+          }
+        },
+        "required" : [ "agent", "quantity", "runtimes" ],
+        "title" : "AgentExport"
+      },
+      "RegistryAgent" : {
+        "type" : "object",
+        "properties" : {
+          "runtimes" : {
+            "$ref" : "#/components/schemas/runtime"
           },
-          "required" : [ "name" ],
-          "title" : "string"
-        } ],
-        "title" : "ConfigEntry"
+          "options" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "anyOf" : [ {
+                "type" : "object",
+                "properties" : {
+                  "type" : {
+                    "type" : "string",
+                    "enum" : [ "number" ],
+                    "title" : "String"
+                  },
+                  "description" : {
+                    "type" : "string",
+                    "title" : "String"
+                  },
+                  "default" : {
+                    "type" : "number",
+                    "format" : "double",
+                    "title" : "Double"
+                  },
+                  "required" : {
+                    "type" : "boolean",
+                    "title" : "Boolean"
+                  }
+                },
+                "required" : [ "required", "type" ],
+                "title" : "number"
+              }, {
+                "type" : "object",
+                "properties" : {
+                  "type" : {
+                    "type" : "string",
+                    "enum" : [ "secret" ],
+                    "title" : "String"
+                  },
+                  "description" : {
+                    "type" : "string",
+                    "title" : "String"
+                  },
+                  "required" : {
+                    "type" : "boolean",
+                    "title" : "Boolean"
+                  }
+                },
+                "required" : [ "required", "type" ],
+                "title" : "secret"
+              }, {
+                "type" : "object",
+                "properties" : {
+                  "type" : {
+                    "type" : "string",
+                    "enum" : [ "string" ],
+                    "title" : "String"
+                  },
+                  "description" : {
+                    "type" : "string",
+                    "title" : "String"
+                  },
+                  "default" : {
+                    "type" : "string",
+                    "title" : "String"
+                  },
+                  "required" : {
+                    "type" : "boolean",
+                    "title" : "Boolean"
+                  }
+                },
+                "required" : [ "required", "type" ],
+                "title" : "string"
+              } ],
+              "discriminator" : {
+                "propertyName" : "type"
+              },
+              "title" : "AgentOption"
+            },
+            "title" : "LinkedHashMap<String,AgentOption>"
+          }
+        },
+        "required" : [ "options", "runtimes" ],
+        "title" : "RegistryAgent"
+      },
+      "runtime" : {
+        "type" : "object",
+        "properties" : {
+          "executable" : {
+            "$ref" : "#/components/schemas/executable"
+          },
+          "docker" : {
+            "$ref" : "#/components/schemas/docker"
+          }
+        },
+        "title" : "runtime"
+      },
+      "executable" : {
+        "type" : "object",
+        "properties" : {
+          "command" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "title" : "String"
+            },
+            "title" : "ArrayList<String>"
+          },
+          "environment" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/EnvVar"
+            },
+            "title" : "ArrayList<EnvVar>"
+          }
+        },
+        "required" : [ "command", "environment" ],
+        "title" : "executable"
+      },
+      "EnvVar" : {
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "value" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "from" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "option" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        },
+        "title" : "EnvVar"
+      },
+      "docker" : {
+        "type" : "object",
+        "properties" : {
+          "image" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "environment" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/EnvVar"
+            },
+            "title" : "ArrayList<EnvVar>"
+          },
+          "dockerClientConfig" : {
+            "$ref" : "#/components/schemas/Polymorphic<DockerClientConfig>"
+          },
+          "dockerClient" : {
+            "$ref" : "#/components/schemas/Polymorphic<DockerClient>"
+          }
+        },
+        "required" : [ "dockerClientConfig", "environment", "image" ],
+        "title" : "docker"
+      },
+      "Polymorphic<DockerClientConfig>" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Polymorphic<DockerClientConfig>"
+      },
+      "Polymorphic<DockerClient>" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "Polymorphic<DockerClient>"
+      },
+      "AgentExportPricing" : {
+        "type" : "object",
+        "properties" : {
+          "min_price" : {
+            "type" : "number",
+            "format" : "double",
+            "title" : "Double"
+          },
+          "max_price" : {
+            "type" : "number",
+            "format" : "double",
+            "title" : "Double"
+          }
+        },
+        "required" : [ "max_price", "min_price" ],
+        "title" : "AgentExportPricing"
       }
     },
     "examples" : { }

@@ -1,6 +1,6 @@
-use crate::api::types::SystemContentType;
+use progenitor::generate_api;
 
-include!(concat!(env!("OUT_DIR"), "/codegen.rs"));
+generate_api!("api_v1.json");
 
 impl From<rig::message::Message> for types::GenericMessage {
     fn from(value: rig::message::Message) -> Self {
@@ -243,11 +243,10 @@ impl From<rig::providers::openai::Message> for types::OpenAiMessage {
 }
 
 impl From<rig::providers::openai::SystemContent> for types::OpenAiSystemContent {
-    fn from(_value: rig::providers::openai::SystemContent) -> Self {
+    fn from(value: rig::providers::openai::SystemContent) -> Self {
         types::OpenAiSystemContent {
-            // everything is private!!
-            text: String::new(),
-            type_: SystemContentType::Text,
+            text: value.text,
+            type_: value.r#type.into(),
         }
     }
 }
@@ -349,10 +348,9 @@ impl From<rig::providers::openai::Function> for types::Function {
 }
 
 impl From<rig::providers::openai::AudioAssistant> for types::AudioAssistant {
-    fn from(_value: rig::providers::openai::AudioAssistant) -> Self {
+    fn from(value: rig::providers::openai::AudioAssistant) -> Self {
         types::AudioAssistant {
-            // _value.id is private...
-            id: "".to_string(),
+            id: value.id,
         }
     }
 }
