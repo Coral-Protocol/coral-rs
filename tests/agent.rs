@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod agent_tests {
     use coral_rs::agent::Agent;
-    use coral_rs::agent_loop::AgentLoop;
+    use coral_rs::agent_loop::{AgentLoop, IterationPromptProvider};
     use coral_rs::mcp_server::McpConnectionBuilder;
     use coral_rs::telemetry::TelemetryMode;
     use rig::client::{CompletionClient, ProviderClient};
@@ -32,8 +32,11 @@ mod agent_tests {
             .telemetry(TelemetryMode::OpenAI, model)
             .mcp_server(coral);
 
-        AgentLoop::new(agent, "create a thread and send 3 random messages in it")
+        let prompt_provider = IterationPromptProvider::new("create a thread and send 3 random messages in it")
             .iterations(1)
+            .no_delay();
+
+        AgentLoop::new(agent, prompt_provider)
             .execute()
             .await
             .expect("Agent loop failed");

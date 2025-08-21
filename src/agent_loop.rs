@@ -10,22 +10,50 @@ const DEFAULT_DELAY: Duration = Duration::from_secs(10);
 
 pub struct AgentLoop<M: CompletionModel>  {
     agent: Agent<M>,
-    prompt: String,
-    iterations: u32,
-    delay: Duration,
+    iteration_prompt_provider: IterationPromptProvider,
     iteration_tool_quota: Option<u32>
 }
 
-impl<M: CompletionModel>  AgentLoop<M> {
-    ///
-    /// Creates a new Coral agent loop
-    pub fn new(agent: Agent<M>, prompt: impl Into<String>) -> Self {
+pub trait LoopPromptProvider {
+    /// Called to generate the prompt for this loop
+    fn loop_prompt(&mut self) -> impl Future<Output = String> + Send;
+
+    /// Called after the prompt is generated, if this returns true the loop will exit
+    fn finished(&self) -> impl Future<Output = bool> + Send;
+}
+
+pub struct IterationPromptProvider {
+    prompt: String,
+    iteration_count: u32,
+    iteration_max: u32,
+    delay: Option<Duration>
+}
+
+impl LoopPromptProvider for IterationPromptProvider {
+    async fn loop_prompt(&mut self) -> String {
+        // No delay for the first iteration
+        if self.iteration_count > 0 {
+            if let Some(delay) = self.delay {
+                tokio::time::sleep(delay).await;
+            }
+        }
+
+        self.iteration_count += 1;
+        self.prompt.clone()
+    }
+
+    async fn finished(&self) -> bool {
+        self.iteration_count >= self.iteration_max
+    }
+}
+
+impl IterationPromptProvider {
+    pub fn new(prompt: impl Into<String>) -> Self {
         Self {
-            agent,
             prompt: prompt.into(),
-            iterations: DEFAULT_ITERATIONS,
-            delay: DEFAULT_DELAY,
-            iteration_tool_quota: DEFAULT_ITERATION_TOOL_QUOTA
+            iteration_count: 0,
+            iteration_max: DEFAULT_ITERATIONS,
+            delay: Some(DEFAULT_DELAY)
         }
     }
 
@@ -33,7 +61,7 @@ impl<M: CompletionModel>  AgentLoop<M> {
     /// The number of iterations to loop for
     /// Default is [`DEFAULT_ITERATIONS`]
     pub fn iterations(mut self, iterations: u32) -> Self {
-        self.iterations = iterations;
+        self.iteration_max = iterations;
         self
     }
 
@@ -42,9 +70,29 @@ impl<M: CompletionModel>  AgentLoop<M> {
     /// The time it took for the last iteration to complete has no bearing on this parameter.
     /// Default is [`DEFAULT_DELAY`]
     pub fn delay(mut self, delay: Duration) -> Self {
-        self.delay = delay;
+        self.delay = Some(delay);
         self
     }
+
+    ///
+    /// Call this to disable delays between iterations
+    pub fn no_delay(mut self) -> Self {
+        self.delay = None;
+        self
+    }
+}
+
+impl<M: CompletionModel>  AgentLoop<M> {
+    ///
+    /// Creates a new Coral agent loop
+    pub fn new(agent: Agent<M>, iteration_prompt_provider: IterationPromptProvider) -> Self {
+        Self {
+            agent,
+            iteration_prompt_provider,
+            iteration_tool_quota: DEFAULT_ITERATION_TOOL_QUOTA
+        }
+    }
+
 
     ///
     /// The maximum number of tools that can be used during one iteration.  If an iteration reaches
@@ -64,21 +112,20 @@ impl<M: CompletionModel>  AgentLoop<M> {
     /// Executes the loop, consuming self
     pub async fn execute(mut self) -> Result<(), Error> {
         info!("Starting Coral agent loop");
-        info!("Prompt: {}", self.prompt);
 
         let mut messages = Vec::new();
-        for i in 0..self.iterations {
-            tokio::time::sleep(self.delay).await;
+        let mut iterations = 0;
+        loop {
+            let prompt = self.iteration_prompt_provider.loop_prompt().await;
+            iterations += 1;
 
             // An iteration should always start with the loop prompt
-            messages.push(self.prompt.clone().into());
+            messages.push(prompt.clone().into());
 
             let mut depth = 0;
             loop {
                 depth = depth + 1;
-                info!("Running iteration {}/{} [tool quota {}/{}]",
-                    i + 1,
-                    self.iterations,
+                info!("Tool iteration {}/{} [prompt iteration {iterations}]",
                     depth + 1,
                     self.iteration_tool_quota.map_or("unlimited".to_string(), |x| x.to_string()),
                 );
@@ -90,14 +137,18 @@ impl<M: CompletionModel>  AgentLoop<M> {
 
                 messages = res.messages;
                 if res.tools_used == 0 {
-                    info!("Iteration {}/{} finished - no tools used", i + 1, self.iterations);
+                    info!("Prompt iteration [{iterations}] finished - no tools used");
                     break;
                 }
 
                 if Some(depth) == self.iteration_tool_quota {
-                    warn!("Iteration {}/{} finished - tool quota reached", i + 1, self.iterations);
+                    warn!("Prompt iteration [{iterations}] finished - tool quota reached");
                     break;
                 }
+            }
+
+            if self.iteration_prompt_provider.finished().await {
+                break;
             }
         }
 
