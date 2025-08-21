@@ -19,10 +19,7 @@ impl McpConnectionBuilder {
             client_info: ClientInfo {
                 protocol_version: Default::default(),
                 capabilities: Default::default(),
-                client_info: Implementation {
-                    name: env!("CARGO_PKG_NAME").to_string(),
-                    version: env!("CARGO_PKG_VERSION").to_string(),
-                },
+                client_info: Implementation::from_build_env()
             },
             url,
             revalidate_tooling: false,
