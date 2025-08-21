@@ -1,3 +1,4 @@
+use std::pin::Pin;
 use crate::agent::Agent;
 use crate::error::Error;
 use rig::completion::{CompletionModel};
@@ -10,17 +11,18 @@ const DEFAULT_DELAY: Duration = Duration::from_secs(10);
 
 pub struct AgentLoop<M: CompletionModel>  {
     agent: Agent<M>,
-    iteration_prompt_provider: IterationPromptProvider,
+    iteration_prompt_provider: Box<dyn LoopPromptProvider>,
     iteration_tool_quota: Option<u32>
 }
 
-pub trait LoopPromptProvider {
+pub trait LoopPromptProvider: Send + Sync {
     /// Called to generate the prompt for this loop
-    fn loop_prompt(&mut self) -> impl Future<Output = String> + Send;
+    fn loop_prompt(&mut self) -> Pin<Box<dyn Future<Output = String> + Send + '_>>;
 
-    /// Called after the prompt is generated, if this returns true the loop will exit
-    fn finished(&self) -> impl Future<Output = bool> + Send;
+    /// Called after the prompt is generated, if this returns true, the loop will exit
+    fn finished(&self) -> Pin<Box<dyn Future<Output = bool> + Send + '_>>;
 }
+
 
 pub struct IterationPromptProvider {
     prompt: String,
@@ -30,20 +32,24 @@ pub struct IterationPromptProvider {
 }
 
 impl LoopPromptProvider for IterationPromptProvider {
-    async fn loop_prompt(&mut self) -> String {
-        // No delay for the first iteration
-        if self.iteration_count > 0 {
-            if let Some(delay) = self.delay {
-                tokio::time::sleep(delay).await;
+    fn loop_prompt(&mut self) -> Pin<Box<dyn Future<Output = String> + Send + '_>> {
+        Box::pin(async move {
+            // No delay for the first iteration
+            if self.iteration_count > 0 {
+                if let Some(delay) = self.delay {
+                    tokio::time::sleep(delay).await;
+                }
             }
-        }
 
-        self.iteration_count += 1;
-        self.prompt.clone()
+            self.iteration_count += 1;
+            self.prompt.clone()
+        })
     }
 
-    async fn finished(&self) -> bool {
-        self.iteration_count >= self.iteration_max
+    fn finished(&self) -> Pin<Box<dyn Future<Output = bool> + Send + '_>> {
+        Box::pin(async move {
+            self.iteration_count >= self.iteration_max
+        })
     }
 }
 
@@ -85,10 +91,10 @@ impl IterationPromptProvider {
 impl<M: CompletionModel>  AgentLoop<M> {
     ///
     /// Creates a new Coral agent loop
-    pub fn new(agent: Agent<M>, iteration_prompt_provider: IterationPromptProvider) -> Self {
+    pub fn new(agent: Agent<M>, iteration_prompt_provider: impl LoopPromptProvider + 'static) -> Self {
         Self {
             agent,
-            iteration_prompt_provider,
+            iteration_prompt_provider: Box::new(iteration_prompt_provider),
             iteration_tool_quota: DEFAULT_ITERATION_TOOL_QUOTA
         }
     }
