@@ -1,6 +1,8 @@
 [agent]
 name = "example-agent"
 version = "0.0.1"
+ddescription = "A simple example agent with no collaborative ability"
+capabilities = ["resources", "tool_refreshing"]
 
 [options]
 OPENAI_API_KEY = { type = "string", description = "The OpenAI key to use for this agent" }
