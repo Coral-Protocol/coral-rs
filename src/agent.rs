@@ -1,4 +1,4 @@
-use crate::api::types::TelemetryTarget;
+use crate::api::generated::types::TelemetryTarget;
 use crate::error::Error;
 use crate::mcp_server::McpServerConnection;
 use crate::telemetry::{TelemetryIdentifier, TelemetryMode, TelemetryRequest};

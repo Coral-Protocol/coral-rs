@@ -79,11 +79,25 @@
           },
           "404" : {
             "description" : "Session not found",
-            "headers" : { }
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RouteException"
+                }
+              }
+            }
           },
           "500" : {
             "description" : "Error creating thread",
-            "headers" : { }
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RouteException"
+                }
+              }
+            }
           }
         },
         "deprecated" : false
@@ -158,11 +172,25 @@
           },
           "404" : {
             "description" : "Session not found",
-            "headers" : { }
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RouteException"
+                }
+              }
+            }
           },
           "500" : {
             "description" : "Error sending message",
-            "headers" : { }
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RouteException"
+                }
+              }
+            }
           }
         },
         "deprecated" : false
@@ -226,11 +254,25 @@
           },
           "403" : {
             "description" : "Invalid application ID or privacy key",
-            "headers" : { }
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RouteException"
+                }
+              }
+            }
           },
           "400" : {
             "description" : "The agent graph is invalid and could not be processed",
-            "headers" : { }
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RouteException"
+                }
+              }
+            }
           }
         },
         "deprecated" : false
@@ -283,19 +325,47 @@
           },
           "403" : {
             "description" : "Invalid application ID or privacy key",
-            "headers" : { }
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RouteException"
+                }
+              }
+            }
           },
           "404" : {
             "description" : "Invalid Coral session ID",
-            "headers" : { }
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RouteException"
+                }
+              }
+            }
           },
           "400" : {
             "description" : "Invalid session ID",
-            "headers" : { }
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RouteException"
+                }
+              }
+            }
           },
           "500" : {
             "description" : "MCP error",
-            "headers" : { }
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RouteException"
+                }
+              }
+            }
           }
         },
         "deprecated" : false
@@ -348,15 +418,36 @@
           },
           "404" : {
             "description" : "Invalid Coral session ID",
-            "headers" : { }
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RouteException"
+                }
+              }
+            }
           },
           "400" : {
             "description" : "Invalid session ID",
-            "headers" : { }
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RouteException"
+                }
+              }
+            }
           },
           "500" : {
             "description" : "MCP error",
-            "headers" : { }
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RouteException"
+                }
+              }
+            }
           }
         },
         "deprecated" : false
@@ -416,7 +507,14 @@
           },
           "404" : {
             "description" : "Telemetry data not found for specified message",
-            "headers" : { }
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RouteException"
+                }
+              }
+            }
           }
         },
         "deprecated" : false
@@ -455,6 +553,17 @@
           "200" : {
             "description" : "Success",
             "headers" : { }
+          },
+          "404" : {
+            "description" : "Specified messages were not found",
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RouteException"
+                }
+              }
+            }
           }
         },
         "deprecated" : false
@@ -551,6 +660,124 @@
           },
           "required" : [ "id", "type" ],
           "title" : "debug_agent_registered"
+        }, {
+          "type" : "object",
+          "properties" : {
+            "type" : {
+              "type" : "string",
+              "enum" : [ "session" ],
+              "title" : "String"
+            },
+            "event" : {
+              "anyOf" : [ {
+                "type" : "object",
+                "properties" : {
+                  "type" : {
+                    "type" : "string",
+                    "enum" : [ "agent_ready" ],
+                    "title" : "String"
+                  },
+                  "agent" : {
+                    "type" : "string",
+                    "title" : "String"
+                  }
+                },
+                "required" : [ "agent", "type" ],
+                "title" : "agent_ready"
+              }, {
+                "type" : "object",
+                "properties" : {
+                  "type" : {
+                    "type" : "string",
+                    "enum" : [ "agent_registered" ],
+                    "title" : "String"
+                  },
+                  "agent" : {
+                    "$ref" : "#/components/schemas/Agent"
+                  }
+                },
+                "required" : [ "agent", "type" ],
+                "title" : "agent_registered"
+              }, {
+                "type" : "object",
+                "properties" : {
+                  "type" : {
+                    "type" : "string",
+                    "enum" : [ "agent_state_updated" ],
+                    "title" : "String"
+                  },
+                  "agent_id" : {
+                    "type" : "string",
+                    "title" : "String"
+                  },
+                  "state" : {
+                    "$ref" : "#/components/schemas/AgentState"
+                  }
+                },
+                "required" : [ "agent_id", "state", "type" ],
+                "title" : "agent_state_updated"
+              }, {
+                "type" : "object",
+                "properties" : {
+                  "type" : {
+                    "type" : "string",
+                    "enum" : [ "message_sent" ],
+                    "title" : "String"
+                  },
+                  "thread_id" : {
+                    "type" : "string",
+                    "title" : "String"
+                  },
+                  "message" : {
+                    "$ref" : "#/components/schemas/ResolvedMessage"
+                  }
+                },
+                "required" : [ "message", "thread_id", "type" ],
+                "title" : "message_sent"
+              }, {
+                "type" : "object",
+                "properties" : {
+                  "type" : {
+                    "type" : "string",
+                    "enum" : [ "thread_created" ],
+                    "title" : "String"
+                  },
+                  "id" : {
+                    "type" : "string",
+                    "title" : "String"
+                  },
+                  "name" : {
+                    "type" : "string",
+                    "title" : "String"
+                  },
+                  "creator_id" : {
+                    "type" : "string",
+                    "title" : "String"
+                  },
+                  "participants" : {
+                    "type" : "array",
+                    "items" : {
+                      "type" : "string",
+                      "title" : "String"
+                    },
+                    "title" : "ArrayList<String>"
+                  },
+                  "summary" : {
+                    "type" : "string",
+                    "title" : "String"
+                  }
+                },
+                "required" : [ "creator_id", "id", "name", "participants", "type" ],
+                "title" : "thread_created"
+              } ],
+              "discriminator" : {
+                "propertyName" : "type"
+              },
+              "title" : "SessionEvent"
+            }
+          },
+          "required" : [ "event", "type" ],
+          "title" : "session"
         }, {
           "type" : "object",
           "properties" : {
@@ -691,6 +918,46 @@
         "properties" : { },
         "title" : "JsonElement"
       },
+      "ResolvedMessage" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "thread_name" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "thread_id" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "sender_id" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "content" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "timestamp" : {
+            "type" : "integer",
+            "format" : "int64",
+            "title" : "Long"
+          },
+          "mentions" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "title" : "String"
+            },
+            "title" : "ArrayList<String>"
+          }
+        },
+        "required" : [ "content", "id", "mentions", "sender_id", "thread_id", "thread_name", "timestamp" ],
+        "title" : "ResolvedMessage"
+      },
       "ResolvedThread" : {
         "type" : "object",
         "properties" : {
@@ -733,46 +1000,6 @@
         "required" : [ "creator_id", "id", "is_closed", "messages", "name", "participants" ],
         "title" : "ResolvedThread"
       },
-      "ResolvedMessage" : {
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "type" : "string",
-            "title" : "String"
-          },
-          "thread_name" : {
-            "type" : "string",
-            "title" : "String"
-          },
-          "thread_id" : {
-            "type" : "string",
-            "title" : "String"
-          },
-          "sender_id" : {
-            "type" : "string",
-            "title" : "String"
-          },
-          "content" : {
-            "type" : "string",
-            "title" : "String"
-          },
-          "timestamp" : {
-            "type" : "integer",
-            "format" : "int64",
-            "title" : "Long"
-          },
-          "mentions" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string",
-              "title" : "String"
-            },
-            "title" : "ArrayList<String>"
-          }
-        },
-        "required" : [ "content", "id", "mentions", "sender_id", "thread_id", "thread_name", "timestamp" ],
-        "title" : "ResolvedMessage"
-      },
       "CreateThreadInput" : {
         "type" : "object",
         "properties" : {
@@ -791,6 +1018,25 @@
         },
         "required" : [ "participant_ids", "thread_name" ],
         "title" : "CreateThreadInput"
+      },
+      "RouteException" : {
+        "type" : "object",
+        "properties" : {
+          "message" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "stack_trace" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "title" : "String"
+            },
+            "title" : "ArrayList<String>"
+          }
+        },
+        "required" : [ "stack_trace" ],
+        "title" : "RouteException"
       },
       "SendMessageInput" : {
         "type" : "object",
@@ -901,6 +1147,11 @@
             },
             "description" : "The arguments to pass to the agent",
             "title" : "LinkedHashMap<String,AgentOptionValue>"
+          },
+          "system_prompt" : {
+            "type" : "string",
+            "description" : "The system prompt/developer text/preamble passed to the agent",
+            "title" : "String"
           },
           "blocking" : {
             "type" : "boolean",
@@ -2092,6 +2343,13 @@
             "type" : "string",
             "title" : "String"
           },
+          "runtimes" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/RuntimeId"
+            },
+            "title" : "ArrayList<RuntimeId>"
+          },
           "options" : {
             "type" : "object",
             "additionalProperties" : {
@@ -2170,7 +2428,7 @@
             "title" : "LinkedHashMap<String,AgentOption>"
           }
         },
-        "required" : [ "id", "options" ],
+        "required" : [ "id", "options", "runtimes" ],
         "title" : "PublicRegistryAgent"
       },
       "AgentExport" : {

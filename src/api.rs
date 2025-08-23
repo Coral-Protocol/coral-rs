@@ -1,6 +1,9 @@
-use progenitor::generate_api;
+#[allow(renamed_and_removed_lints)]
+pub mod generated {
+    include!(concat!(env!("OUT_DIR"), "/api_v1.rs"));
+}
 
-generate_api!("api_v1.json");
+use generated::types;
 
 impl From<rig::message::Message> for types::GenericMessage {
     fn from(value: rig::message::Message) -> Self {

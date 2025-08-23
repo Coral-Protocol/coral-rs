@@ -1,5 +1,5 @@
-use crate::api::types::{OpenAiMessage, Telemetry, TelemetryMessages, TelemetryPost, TelemetryTarget};
-use crate::api::Client;
+use crate::api::generated::types::{OpenAiMessage, Telemetry, TelemetryMessages, TelemetryPost, TelemetryTarget, RouteException};
+use crate::api::generated::Client;
 use progenitor::progenitor_client::{Error as ProgenitorError};
 use rig::completion::{CompletionModel, Document};
 use serde::Serialize;
@@ -45,7 +45,7 @@ pub(crate) struct TelemetryIdentifier {
 #[derive(Debug, Error)]
 pub(crate) enum Error {
     #[error("failed to send telemetry {0}")]
-    Request(ProgenitorError),
+    Request(ProgenitorError<RouteException>),
 
     #[error("no targets provided")]
     EmptyTargets,
@@ -93,16 +93,16 @@ impl<'a, M: CompletionModel> TelemetryRequest<'a, M> {
 
     ///
     /// Returns messages in API format
-    fn messages_generic(self) -> Vec<crate::api::types::GenericMessage> {
+    fn messages_generic(self) -> Vec<crate::api::generated::types::GenericMessage> {
         self.messages.into_iter().map(Into::into).collect()
     }
 
     ///
     /// Converts Rig documents into Telemetry documents.  Ideally identical types, but Telemetry
     /// comes from an OpenAPI spec and is a different rust type.
-    fn convert_documents(resources: Vec<Document>) -> Vec<crate::api::types::Document> {
+    fn convert_documents(resources: Vec<Document>) -> Vec<crate::api::generated::types::Document> {
         resources.into_iter().map(|x| {
-            crate::api::types::Document {
+            crate::api::generated::types::Document {
                 id: x.id,
                 text: x.text,
             }
