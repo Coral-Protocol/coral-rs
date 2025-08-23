@@ -175,6 +175,7 @@ dependencies = [
 name = "coral-rs"
 version = "0.1.1"
 dependencies = [
+ "futures",
  "progenitor",
  "progenitor-client",
  "reqwest",
@@ -1491,8 +1492,9 @@ dependencies = [
 
 [[package]]
 name = "rig-core"
-version = "0.17.1"
-source = "git+https://github.com/0xPlaygrounds/rig?rev=4c10d68#4c10d68b4d19d866b23ec2c72737f57dd2f3f07f"
+version = "0.18.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e588b3da859ea33f7132e9b3312a9aeda499d166cda63329fb68f7d022aa75bb"
 dependencies = [
  "as-any",
  "async-stream",
@@ -1505,10 +1507,11 @@ dependencies = [
  "reqwest",
  "reqwest-eventsource",
  "rmcp",
- "schemars 0.8.22",
+ "schemars 1.0.4",
  "serde",
  "serde_json",
  "thiserror 2.0.14",
+ "tokio",
  "tracing",
  "url",
 ]
@@ -2048,9 +2051,9 @@ dependencies = [
 
 [[package]]
 name = "tinyvec"
-version = "1.9.0"
+version = "1.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "09b3661f17e86524eccd4371ab0429194e0d7c008abb45f7a7495b1719463c71"
+checksum = "bfa5fdc3bce6191a1dbc8c02d5c8bffcf557bafa17c124c5264a458f1b0613fa"
 dependencies = [
  "tinyvec_macros",
 ]

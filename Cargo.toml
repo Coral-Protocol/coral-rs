@@ -7,7 +7,7 @@ edition = "2024"
 tracing-subscriber = "0.3.19"
 tokio = { version = "1.46.1", features = ["rt-multi-thread", "rt", "macros"] }
 tracing = "0.1.41"
-rig-core = { git = "https://github.com/0xPlaygrounds/rig", rev="4c10d68", features = ["rmcp"] }
+rig-core = { version = "0.18.2", features = ["rmcp"] }
 serde_json = "1.0.141"
 serde = { version = "1.0.219", features = ["derive"] }
 rmcp = { version = "0.5.0", features = [
@@ -23,3 +23,4 @@ reqwest = "0.12.22"
 thiserror = "2.0.12"
 progenitor = "0.11.0"
 progenitor-client = "0.11.0"
+futures = "0.3.31"
