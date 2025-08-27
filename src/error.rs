@@ -11,6 +11,9 @@ pub enum Error {
 
     #[error("mcp error: {0}")]
     McpSseError(SseTransportError<reqwest::Error>),
+
+    #[error("mcp error: {0}")]
+    McpStdioError(std::io::Error),
     
     #[error("mcp error: {0}")]
     McpServiceError(ServiceError),

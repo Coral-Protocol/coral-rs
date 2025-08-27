@@ -2,29 +2,71 @@ use crate::error::Error;
 use rig::tool::rmcp::McpTool;
 use rmcp::model::{ClientInfo, Implementation, ProtocolVersion, ReadResourceRequestParam, ResourceContents};
 use rmcp::service::RunningService;
-use rmcp::transport::SseClientTransport;
+use rmcp::transport::{ConfigureCommandExt, SseClientTransport, TokioChildProcess};
 use rmcp::{RoleClient, ServiceExt};
 use std::sync::Arc;
+use tokio::process::Command;
 
 pub struct McpConnectionBuilder {
     client_info: ClientInfo,
-    url: String,
+    transport: McpTransport,
     revalidate_tooling: bool,
     revalidate_resources: bool,
+    skip_tooling: bool,
+    skip_resources: bool,
+}
+
+struct SseTransport {
+    url: String,
+}
+
+struct StdioTransport {
+    executable: String,
+    arguments: Vec<String>,
+    identifier: String,
+}
+
+enum McpTransport {
+    Sse(SseTransport),
+    Stdio(StdioTransport),
 }
 
 impl McpConnectionBuilder {
-    pub fn new(url: String) -> Self {
+    fn new(transport: McpTransport) -> Self {
         Self {
             client_info: ClientInfo {
                 protocol_version: Default::default(),
                 capabilities: Default::default(),
                 client_info: Implementation::from_build_env()
             },
-            url,
+            transport,
             revalidate_tooling: false,
             revalidate_resources: false,
+            skip_tooling: false,
+            skip_resources: false,
         }
+    }
+
+    ///
+    /// Creates a new MCP connection builder using an SSE transport
+    pub fn sse(url: impl Into<String>) -> Self {
+        Self::new(McpTransport::Sse(SseTransport {
+            url: url.into(),
+        }))
+    }
+
+    ///
+    /// Creates a new MCP connection builder using a child process (stdio transport)
+    pub fn stdio(
+        executable: impl Into<String>,
+        arguments: Vec<&str>,
+        identifier: impl Into<String>
+    ) -> Self {
+        Self::new(McpTransport::Stdio(StdioTransport {
+            executable: executable.into(),
+            arguments: arguments.iter().map(|x| x.to_string()).collect(),
+            identifier: identifier.into(),
+        }))
     }
 
     ///
@@ -33,7 +75,7 @@ impl McpConnectionBuilder {
     /// server and is required for this function to work.  If CORAL_CONNECTION_URL is not set, this
     /// function will panic.
     pub fn from_coral_env() -> Self {
-        Self::new(std::env::var("CORAL_CONNECTION_URL")
+        Self::sse(std::env::var("CORAL_CONNECTION_URL")
             .expect("CORAL_CONNECTION_URL not set"))
             .protocol_version(ProtocolVersion::V_2024_11_05)
             .revalidate_resources(true)
@@ -85,21 +127,66 @@ impl McpConnectionBuilder {
     }
 
     ///
-    /// Builds the connection builder into a connection to an MCP server
-    pub async fn connect_sse(self) -> Result<McpServerConnection, Error> {
-        let transport = SseClientTransport::start(self.url.clone()).await
-            .map_err(Error::McpSseError)?;
+    /// Skips processing tooling from this MCP server.  This must be used on servers that do not
+    /// support tooling.
+    pub fn skip_tooling(mut self, skip_tooling: bool) -> Self {
+        self.skip_tooling = skip_tooling;
+        self
+    }
 
-        Ok(McpServerConnection::new(
-            self.client_info
-                .serve(transport)
-                .await
-                .map_err(Error::McpClientError)?,
-            self.revalidate_tooling,
-            self.revalidate_resources,
-            self.url
-            )
-        )
+    ///
+    /// Skips processing resources from this MCP server.  This must be used on servers that do not
+    /// support resources.
+    pub fn skip_resources(mut self, skip_resources: bool) -> Self {
+        self.skip_resources = skip_resources;
+        self
+    }
+
+    ///
+    /// Builds the connection builder into a connection to an MCP server
+    pub async fn connect(self) -> Result<McpServerConnection, Error> {
+        match self.transport {
+            McpTransport::Sse(sse) => {
+                let transport = SseClientTransport::start(sse.url.clone()).await
+                    .map_err(Error::McpSseError)?;
+
+                let transport = self.client_info
+                    .serve(transport)
+                    .await
+                    .map_err(Error::McpClientError)?;
+
+                Ok(McpServerConnection::new(
+                    transport,
+                    self.revalidate_tooling,
+                    self.revalidate_resources,
+                    self.skip_tooling,
+                    self.skip_resources,
+                    sse.url.clone()
+                ))
+            }
+            McpTransport::Stdio(stdio) => {
+                let cmd = Command::new(stdio.executable).configure(|c| {
+                    c.args(&stdio.arguments);
+                });
+
+                let transport = TokioChildProcess::new(cmd)
+                    .map_err(Error::McpStdioError)?;
+
+                let transport = self.client_info
+                    .serve(transport)
+                    .await
+                    .map_err(Error::McpClientError)?;
+
+                Ok(McpServerConnection::new(
+                    transport,
+                    self.revalidate_tooling,
+                    self.revalidate_resources,
+                    self.skip_tooling,
+                    self.skip_resources,
+                    stdio.identifier
+                ))
+            }
+        }
     }
 }
 
@@ -109,7 +196,9 @@ pub struct McpServerConnection {
     running_service: Arc<RunningService<RoleClient, ClientInfo>>,
     pub(crate) revalidate_tooling: bool,
     pub(crate) revalidate_resources: bool,
-    pub(crate) url: String,
+    pub(crate) skip_tooling: bool,
+    pub(crate) skip_resources: bool,
+    pub(crate) identifier: String,
 }
 
 impl McpServerConnection {
@@ -117,13 +206,17 @@ impl McpServerConnection {
         running_service: RunningService<RoleClient, ClientInfo>,
         revalidate_tooling: bool,
         revalidate_resources: bool,
-        url: String,
+        skip_tooling: bool,
+        skip_resources: bool,
+        identifier: String,
     ) -> Self {
         Self {
             running_service: Arc::new(running_service),
             revalidate_tooling,
             revalidate_resources,
-            url
+            skip_tooling,
+            skip_resources,
+            identifier
         }
     }
 

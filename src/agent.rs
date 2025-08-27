@@ -115,11 +115,18 @@ impl<M: CompletionModel> Agent<M> {
 
         let mut tools = Vec::new();
         for mcp in self.mcp_connections.iter_mut() {
-            if mcp.tools_validated && !mcp.connection.revalidate_tooling {
+            if (mcp.tools_validated && !mcp.connection.revalidate_tooling) ||
+                mcp.connection.skip_tooling {
                 continue;
             }
 
             let mcp_tools = mcp.connection.get_tools().await?;
+            if !mcp.tools_validated {
+                for tool in mcp_tools.iter() {
+                    info!("adding tool \"{}\" from mcp server \"{}\"", tool.name(), mcp.connection.identifier);
+                }
+            }
+
             mcp.tools_validated = true;
 
             // If this MCP connection revalidates tooling, the list of tools that are revalidated
@@ -128,6 +135,7 @@ impl<M: CompletionModel> Agent<M> {
             if mcp.connection.revalidate_tooling {
                 self.revalidating_tooling.extend(mcp_tools.iter().map(|tool| tool.name().clone()))
             }
+
 
             tools.extend(mcp_tools);
         }
@@ -153,11 +161,12 @@ impl<M: CompletionModel> Agent<M> {
         });
 
         for mcp in self.mcp_connections.iter_mut() {
-            if mcp.resources_validated && !mcp.connection.revalidate_resources {
+            if (mcp.resources_validated && !mcp.connection.revalidate_resources)
+                || mcp.connection.skip_resources {
                 continue;
             }
 
-            info!("validating resources for MCP server {}", mcp.connection.url);
+            info!("validating resources for MCP server {}", mcp.connection.identifier);
 
             let mcp_resources: Vec<Document> = mcp.connection.get_resources().await?
                 .into_iter()

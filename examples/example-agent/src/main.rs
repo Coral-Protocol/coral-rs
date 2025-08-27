@@ -19,7 +19,7 @@ async fn main() {
         .expect("setting default subscriber failed");
 
     let coral = McpConnectionBuilder::from_coral_env()
-        .connect_sse()
+        .connect()
         .await.expect("Failed to connect to the Coral server");
 
     let completion_agent = openai::Client::from_env()
