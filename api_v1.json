@@ -749,7 +749,7 @@
                     "enum" : [ "agent_state_updated" ],
                     "title" : "String"
                   },
-                  "agent_id" : {
+                  "agentId" : {
                     "type" : "string",
                     "title" : "String"
                   },
@@ -757,7 +757,7 @@
                     "$ref" : "#/components/schemas/AgentState"
                   }
                 },
-                "required" : [ "agent_id", "state", "type" ],
+                "required" : [ "agentId", "state", "type" ],
                 "title" : "agent_state_updated"
               }, {
                 "type" : "object",
@@ -767,7 +767,7 @@
                     "enum" : [ "message_sent" ],
                     "title" : "String"
                   },
-                  "thread_id" : {
+                  "threadId" : {
                     "type" : "string",
                     "title" : "String"
                   },
@@ -775,7 +775,7 @@
                     "$ref" : "#/components/schemas/ResolvedMessage"
                   }
                 },
-                "required" : [ "message", "thread_id", "type" ],
+                "required" : [ "message", "threadId", "type" ],
                 "title" : "message_sent"
               }, {
                 "type" : "object",
@@ -793,7 +793,7 @@
                     "type" : "string",
                     "title" : "String"
                   },
-                  "creator_id" : {
+                  "creatorId" : {
                     "type" : "string",
                     "title" : "String"
                   },
@@ -810,7 +810,7 @@
                     "title" : "String"
                   }
                 },
-                "required" : [ "creator_id", "id", "name", "participants", "type" ],
+                "required" : [ "creatorId", "id", "name", "participants", "type" ],
                 "title" : "thread_created"
               } ],
               "discriminator" : {
@@ -859,11 +859,11 @@
           "state" : {
             "$ref" : "#/components/schemas/AgentState"
           },
-          "mcp_url" : {
+          "mcpUrl" : {
             "type" : "string",
             "title" : "String"
           },
-          "extra_tools" : {
+          "extraTools" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/CustomTool"
@@ -872,7 +872,7 @@
             "uniqueItems" : true
           }
         },
-        "required" : [ "description", "extra_tools", "id", "state" ],
+        "required" : [ "description", "extraTools", "id", "state" ],
         "title" : "Agent"
       },
       "AgentState" : {
@@ -905,11 +905,11 @@
             },
             "title" : "ToolTransport"
           },
-          "tool_schema" : {
+          "toolSchema" : {
             "$ref" : "#/components/schemas/Tool"
           }
         },
-        "required" : [ "tool_schema", "transport" ],
+        "required" : [ "toolSchema", "transport" ],
         "title" : "CustomTool"
       },
       "Tool" : {
@@ -923,11 +923,11 @@
             "type" : "string",
             "title" : "String"
           },
-          "input_schema" : {
+          "inputSchema" : {
             "$ref" : "#/components/schemas/Input"
           }
         },
-        "required" : [ "input_schema", "name" ],
+        "required" : [ "inputSchema", "name" ],
         "title" : "Tool"
       },
       "Input" : {
@@ -968,15 +968,15 @@
             "type" : "string",
             "title" : "String"
           },
-          "thread_name" : {
+          "threadName" : {
             "type" : "string",
             "title" : "String"
           },
-          "thread_id" : {
+          "threadId" : {
             "type" : "string",
             "title" : "String"
           },
-          "sender_id" : {
+          "senderId" : {
             "type" : "string",
             "title" : "String"
           },
@@ -998,7 +998,7 @@
             "title" : "ArrayList<String>"
           }
         },
-        "required" : [ "content", "id", "mentions", "sender_id", "thread_id", "thread_name", "timestamp" ],
+        "required" : [ "content", "id", "mentions", "senderId", "threadId", "threadName", "timestamp" ],
         "title" : "ResolvedMessage"
       },
       "ResolvedThread" : {
@@ -1012,7 +1012,7 @@
             "type" : "string",
             "title" : "String"
           },
-          "creator_id" : {
+          "creatorId" : {
             "type" : "string",
             "title" : "String"
           },
@@ -1031,7 +1031,7 @@
             },
             "title" : "ArrayList<ResolvedMessage>"
           },
-          "is_closed" : {
+          "isClosed" : {
             "type" : "boolean",
             "title" : "Boolean"
           },
@@ -1040,17 +1040,176 @@
             "title" : "String"
           }
         },
-        "required" : [ "creator_id", "id", "is_closed", "messages", "name", "participants" ],
+        "required" : [ "creatorId", "id", "isClosed", "messages", "name", "participants" ],
         "title" : "ResolvedThread"
+      },
+      "McpToolName" : {
+        "type" : "string",
+        "enum" : [ "coral_add_participant", "coral_close_thread", "coral_create_thread", "coral_list_agents", "coral_remove_participant", "coral_send_message", "coral_wait_for_mentions" ],
+        "title" : "McpToolName"
+      },
+      "McpResources" : {
+        "type" : "string",
+        "enum" : [ "Message.resource", "Instruction.resource", "Agent.resource" ],
+        "title" : "McpResources"
+      },
+      "McpToolResult" : {
+        "anyOf" : [ {
+          "type" : "object",
+          "properties" : {
+            "result" : {
+              "type" : "string",
+              "enum" : [ "add_participant_success" ],
+              "title" : "String"
+            }
+          },
+          "required" : [ "result" ],
+          "title" : "add_participant_success"
+        }, {
+          "type" : "object",
+          "properties" : {
+            "result" : {
+              "type" : "string",
+              "enum" : [ "agent_list_success_with_details" ],
+              "title" : "String"
+            },
+            "agents" : {
+              "type" : "array",
+              "items" : {
+                "$ref" : "#/components/schemas/Agent"
+              },
+              "title" : "ArrayList<Agent>"
+            }
+          },
+          "required" : [ "agents", "result" ],
+          "title" : "agent_list_success_with_details"
+        }, {
+          "type" : "object",
+          "properties" : {
+            "result" : {
+              "type" : "string",
+              "enum" : [ "agent_list_success" ],
+              "title" : "String"
+            },
+            "agents" : {
+              "type" : "array",
+              "items" : {
+                "type" : "string",
+                "title" : "String"
+              },
+              "title" : "ArrayList<String>"
+            }
+          },
+          "required" : [ "agents", "result" ],
+          "title" : "agent_list_success"
+        }, {
+          "type" : "object",
+          "properties" : {
+            "result" : {
+              "type" : "string",
+              "enum" : [ "close_thread_success" ],
+              "title" : "String"
+            }
+          },
+          "required" : [ "result" ],
+          "title" : "close_thread_success"
+        }, {
+          "type" : "object",
+          "properties" : {
+            "result" : {
+              "type" : "string",
+              "enum" : [ "create_thread_success" ],
+              "title" : "String"
+            },
+            "thread" : {
+              "$ref" : "#/components/schemas/ResolvedThread"
+            }
+          },
+          "required" : [ "result", "thread" ],
+          "title" : "create_thread_success"
+        }, {
+          "type" : "object",
+          "properties" : {
+            "result" : {
+              "type" : "string",
+              "enum" : [ "error" ],
+              "title" : "String"
+            },
+            "message" : {
+              "type" : "string",
+              "title" : "String"
+            }
+          },
+          "required" : [ "message", "result" ],
+          "title" : "error"
+        }, {
+          "type" : "object",
+          "properties" : {
+            "result" : {
+              "type" : "string",
+              "enum" : [ "remove_participant_success" ],
+              "title" : "String"
+            }
+          },
+          "required" : [ "result" ],
+          "title" : "remove_participant_success"
+        }, {
+          "type" : "object",
+          "properties" : {
+            "result" : {
+              "type" : "string",
+              "enum" : [ "send_message_success" ],
+              "title" : "String"
+            },
+            "message" : {
+              "$ref" : "#/components/schemas/ResolvedMessage"
+            }
+          },
+          "required" : [ "message", "result" ],
+          "title" : "send_message_success"
+        }, {
+          "type" : "object",
+          "properties" : {
+            "result" : {
+              "type" : "string",
+              "enum" : [ "wait_for_mentions_success" ],
+              "title" : "String"
+            },
+            "messages" : {
+              "type" : "array",
+              "items" : {
+                "$ref" : "#/components/schemas/ResolvedMessage"
+              },
+              "title" : "ArrayList<ResolvedMessage>"
+            }
+          },
+          "required" : [ "messages", "result" ],
+          "title" : "wait_for_mentions_success"
+        }, {
+          "type" : "object",
+          "properties" : {
+            "result" : {
+              "type" : "string",
+              "enum" : [ "error_timeout" ],
+              "title" : "String"
+            }
+          },
+          "required" : [ "result" ],
+          "title" : "error_timeout"
+        } ],
+        "discriminator" : {
+          "propertyName" : "result"
+        },
+        "title" : "McpToolResult"
       },
       "CreateThreadInput" : {
         "type" : "object",
         "properties" : {
-          "thread_name" : {
+          "threadName" : {
             "type" : "string",
             "title" : "String"
           },
-          "participant_ids" : {
+          "participantIds" : {
             "type" : "array",
             "items" : {
               "type" : "string",
@@ -1059,7 +1218,7 @@
             "title" : "ArrayList<String>"
           }
         },
-        "required" : [ "participant_ids", "thread_name" ],
+        "required" : [ "participantIds", "threadName" ],
         "title" : "CreateThreadInput"
       },
       "RouteException" : {
@@ -1069,7 +1228,7 @@
             "type" : "string",
             "title" : "String"
           },
-          "stack_trace" : {
+          "stackTrace" : {
             "type" : "array",
             "items" : {
               "type" : "string",
@@ -1078,13 +1237,13 @@
             "title" : "ArrayList<String>"
           }
         },
-        "required" : [ "stack_trace" ],
+        "required" : [ "stackTrace" ],
         "title" : "RouteException"
       },
       "SendMessageInput" : {
         "type" : "object",
         "properties" : {
-          "thread_id" : {
+          "threadId" : {
             "type" : "string",
             "title" : "String"
           },
@@ -1101,7 +1260,7 @@
             "title" : "ArrayList<String>"
           }
         },
-        "required" : [ "content", "mentions", "thread_id" ],
+        "required" : [ "content", "mentions", "threadId" ],
         "title" : "SendMessageInput"
       },
       "AgentGraphRequest" : {
@@ -1143,12 +1302,12 @@
         "type" : "object",
         "description" : "A request for an agent",
         "properties" : {
-          "registry_agent_name" : {
+          "registryAgentName" : {
             "type" : "string",
             "description" : "The name of the agent in the registry.  This is case sensitive and must match exactly",
             "title" : "String"
           },
-          "agent_name" : {
+          "agentName" : {
             "type" : "string",
             "description" : "The name that this agent will have in the session graph",
             "title" : "String"
@@ -1196,7 +1355,7 @@
             "description" : "The arguments to pass to the agent",
             "title" : "LinkedHashMap<String,AgentOptionValue>"
           },
-          "system_prompt" : {
+          "systemPrompt" : {
             "type" : "string",
             "description" : "The system prompt/developer text/preamble passed to the agent",
             "title" : "String"
@@ -1245,7 +1404,7 @@
                   "$ref" : "#/components/schemas/RuntimeId",
                   "description" : "The runtime that should be used for this remote agent.  Servers can export only specific runtimes so the runtime choice may narrow servers that can adequately provide the agent"
                 },
-                "server_source" : {
+                "serverSource" : {
                   "anyOf" : [ {
                     "type" : "object",
                     "properties" : {
@@ -1286,7 +1445,7 @@
                   },
                   "title" : "GraphAgentServerSource"
                 },
-                "server_scoring" : {
+                "serverScoring" : {
                   "anyOf" : [ {
                     "type" : "object",
                     "description" : "Custom server scoring.  Weights can be added on a flat or multiplier basis per attribute",
@@ -1451,7 +1610,7 @@
                   "title" : "GraphAgentServerScoring"
                 }
               },
-              "required" : [ "runtime", "server_source", "type" ],
+              "required" : [ "runtime", "serverSource", "type" ],
               "title" : "remote"
             } ],
             "description" : "The server that should provide this agent and the runtime to use",
@@ -1461,7 +1620,7 @@
             "title" : "GraphAgentProvider"
           }
         },
-        "required" : [ "agent_name", "options", "provider", "registry_agent_name", "tools" ],
+        "required" : [ "agentName", "options", "provider", "registryAgentName", "tools" ],
         "title" : "GraphAgentRequest"
       },
       "RuntimeId" : {
@@ -1601,42 +1760,42 @@
       "CreateSessionRequest" : {
         "type" : "object",
         "properties" : {
-          "application_id" : {
+          "applicationId" : {
             "type" : "string",
             "title" : "String"
           },
-          "session_id" : {
+          "sessionId" : {
             "type" : "string",
             "title" : "String"
           },
-          "privacy_key" : {
+          "privacyKey" : {
             "type" : "string",
             "title" : "String"
           },
-          "agent_graph" : {
+          "agentGraph" : {
             "$ref" : "#/components/schemas/AgentGraphRequest"
           }
         },
-        "required" : [ "application_id", "privacy_key" ],
+        "required" : [ "applicationId", "privacyKey" ],
         "title" : "CreateSessionRequest"
       },
       "CreateSessionResponse" : {
         "type" : "object",
         "properties" : {
-          "session_id" : {
+          "sessionId" : {
             "type" : "string",
             "title" : "String"
           },
-          "application_id" : {
+          "applicationId" : {
             "type" : "string",
             "title" : "String"
           },
-          "privacy_key" : {
+          "privacyKey" : {
             "type" : "string",
             "title" : "String"
           }
         },
-        "required" : [ "application_id", "privacy_key", "session_id" ],
+        "required" : [ "applicationId", "privacyKey", "sessionId" ],
         "title" : "CreateSessionResponse"
       },
       "Document" : {
@@ -1816,7 +1975,7 @@
       "Telemetry" : {
         "type" : "object",
         "properties" : {
-          "model_description" : {
+          "modelDescription" : {
             "type" : "string",
             "title" : "String"
           },
@@ -1843,12 +2002,12 @@
             "format" : "double",
             "title" : "Double"
           },
-          "max_tokens" : {
+          "maxTokens" : {
             "type" : "integer",
             "format" : "int64",
             "title" : "Long"
           },
-          "additional_params" : {
+          "additionalParams" : {
             "type" : "object",
             "additionalProperties" : {
               "$ref" : "#/components/schemas/JsonElement"
@@ -1928,7 +2087,7 @@
                                   "type" : "string",
                                   "title" : "String"
                                 },
-                                "call_id" : {
+                                "callId" : {
                                   "type" : "string",
                                   "title" : "String"
                                 },
@@ -1975,7 +2134,7 @@
                                 "format" : {
                                   "$ref" : "#/components/schemas/ContentFormat"
                                 },
-                                "media_type" : {
+                                "mediaType" : {
                                   "$ref" : "#/components/schemas/AudioMediaType"
                                 }
                               },
@@ -1996,7 +2155,7 @@
                                 "format" : {
                                   "$ref" : "#/components/schemas/ContentFormat"
                                 },
-                                "media_type" : {
+                                "mediaType" : {
                                   "$ref" : "#/components/schemas/DocumentMediaType"
                                 }
                               },
@@ -2017,7 +2176,7 @@
                                 "format" : {
                                   "$ref" : "#/components/schemas/ContentFormat"
                                 },
-                                "media_type" : {
+                                "mediaType" : {
                                   "$ref" : "#/components/schemas/ImageMediaType"
                                 },
                                 "detail" : {
@@ -2053,7 +2212,7 @@
                                   "type" : "string",
                                   "title" : "String"
                                 },
-                                "call_id" : {
+                                "callId" : {
                                   "type" : "string",
                                   "title" : "String"
                                 },
@@ -2075,7 +2234,7 @@
                                         "format" : {
                                           "$ref" : "#/components/schemas/ContentFormat"
                                         },
-                                        "media_type" : {
+                                        "mediaType" : {
                                           "$ref" : "#/components/schemas/ImageMediaType"
                                         },
                                         "detail" : {
@@ -2125,7 +2284,7 @@
                                 "format" : {
                                   "$ref" : "#/components/schemas/ContentFormat"
                                 },
-                                "media_type" : {
+                                "mediaType" : {
                                   "$ref" : "#/components/schemas/VideoMediaType"
                                 }
                               },
@@ -2224,7 +2383,7 @@
                           "type" : "string",
                           "title" : "String"
                         },
-                        "tool_calls" : {
+                        "toolCalls" : {
                           "type" : "array",
                           "items" : {
                             "$ref" : "#/components/schemas/ToolCall"
@@ -2232,7 +2391,7 @@
                           "title" : "ArrayList<ToolCall>"
                         }
                       },
-                      "required" : [ "content", "role", "tool_calls" ],
+                      "required" : [ "content", "role", "toolCalls" ],
                       "title" : "assistant"
                     }, {
                       "type" : "object",
@@ -2264,7 +2423,7 @@
                           "enum" : [ "tool" ],
                           "title" : "String"
                         },
-                        "tool_call_id" : {
+                        "toolCallId" : {
                           "type" : "string",
                           "title" : "String"
                         },
@@ -2276,7 +2435,7 @@
                           "title" : "ArrayList<OpenAIToolResultContent>"
                         }
                       },
-                      "required" : [ "content", "role", "tool_call_id" ],
+                      "required" : [ "content", "role", "toolCallId" ],
                       "title" : "tool"
                     }, {
                       "type" : "object",
@@ -2297,11 +2456,11 @@
                                   "enum" : [ "audio" ],
                                   "title" : "String"
                                 },
-                                "input_audio" : {
+                                "inputAudio" : {
                                   "$ref" : "#/components/schemas/InputAudio"
                                 }
                               },
-                              "required" : [ "input_audio", "type" ],
+                              "required" : [ "inputAudio", "type" ],
                               "title" : "audio"
                             }, {
                               "type" : "object",
@@ -2311,11 +2470,11 @@
                                   "enum" : [ "image_url" ],
                                   "title" : "String"
                                 },
-                                "image_url" : {
+                                "imageUrl" : {
                                   "$ref" : "#/components/schemas/ImageUrl"
                                 }
                               },
-                              "required" : [ "image_url", "type" ],
+                              "required" : [ "imageUrl", "type" ],
                               "title" : "image_url"
                             }, {
                               "type" : "object",
@@ -2365,22 +2524,22 @@
             "title" : "TelemetryMessages"
           }
         },
-        "required" : [ "messages", "model_description", "resources", "tools" ],
+        "required" : [ "messages", "modelDescription", "resources", "tools" ],
         "title" : "Telemetry"
       },
       "TelemetryTarget" : {
         "type" : "object",
         "properties" : {
-          "thread_id" : {
+          "threadId" : {
             "type" : "string",
             "title" : "String"
           },
-          "message_id" : {
+          "messageId" : {
             "type" : "string",
             "title" : "String"
           }
         },
-        "required" : [ "message_id", "thread_id" ],
+        "required" : [ "messageId", "threadId" ],
         "title" : "TelemetryTarget"
       },
       "TelemetryPost" : {

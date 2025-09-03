@@ -1,4 +1,4 @@
-use crate::api::generated::types::TelemetryTarget;
+use crate::api::generated::types::{McpToolName, McpToolResult, TelemetryTarget};
 use crate::error::Error;
 use crate::mcp_server::McpServerConnection;
 use crate::telemetry::{TelemetryIdentifier, TelemetryMode, TelemetryRequest};
@@ -210,6 +210,7 @@ impl<M: CompletionModel> Agent<M> {
         targets: Vec<TelemetryTarget>,
         messages: Vec<Message>
     ) {
+        let target_count = targets.len();
         let id = TelemetryIdentifier {
             targets,
             session_id: self.telemetry_session_id.clone(),
@@ -229,6 +230,41 @@ impl<M: CompletionModel> Agent<M> {
         if let Err(e) = res {
             warn!("Error sending telemetry: {e}")
         }
+        else {
+            info!("Telemetry attached to {target_count} messages");
+        }
+    }
+
+    ///
+    /// Gathers a list of places that telemetry could be attached to when given a tool call (name
+    /// and output from tool).
+    ///
+    /// At the moment, telemetry is only attached to Coral messages.  So this function will return
+    /// a TelemetryTarget from a Coral message if passed a call to [`McpTooling::CoralSendMessage`]
+    fn find_telemetry_targets(name: &String, output: &String) -> Vec<TelemetryTarget> {
+        let mut telemetry_targets = Vec::new();
+
+        match serde_json::from_str::<McpToolName>(format!("\"{name}\"").as_str()) {
+            Ok(McpToolName::CoralSendMessage) => {
+                match serde_json::from_str::<McpToolResult>(output) {
+                    Ok(McpToolResult::SendMessageSuccess { message }) => {
+                        telemetry_targets.push(TelemetryTarget {
+                            message_id: message.id,
+                            thread_id: message.thread_id,
+                        })
+                    }
+                    Err(e) => {
+                        warn!("Identified CoralSendMessage tool call, but couldn't parse the output: {e}");
+                    },
+                    Ok(other) => {
+                        warn!("Identified CoralSendMessage tool call, but got a non SendMessageSuccess return: {other:#?}");
+                    }
+                }
+            }
+            _ => {}
+        }
+
+        telemetry_targets
     }
 
     /// Performs a completion request
@@ -291,26 +327,7 @@ impl<M: CompletionModel> Agent<M> {
                         .await
                         .map_err(Error::ToolsetError)?;
 
-                    // Telemetry hook
-                    // TODO: can we get some strong typing?
-                    if tool_call.function.name == "send_message" && output.starts_with("Message sent successfully:") {
-                        let message_id = output.lines()
-                            .skip(1)
-                            .find(|line| line.starts_with("ID: "))
-                            .map(|line| line.trim_start_matches("ID: "));
-
-                        let thread_id = output.lines()
-                            .skip(2)
-                            .find(|line| line.starts_with("Thread: "))
-                            .map(|line| line.trim_start_matches("Thread: "));
-
-                        if let (Some(message_id), Some(thread_id)) = (message_id, thread_id) {
-                            telemetry_targets.push(TelemetryTarget {
-                                thread_id: thread_id.to_string(),
-                                message_id: message_id.to_string(),
-                            });
-                        }
-                    }
+                    telemetry_targets.extend(Self::find_telemetry_targets(&tool_call.function.name, &output));
 
                     messages.push(
                         if let Some(call_id) = tool_call.call_id {
