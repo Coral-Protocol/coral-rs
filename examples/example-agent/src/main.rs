@@ -3,6 +3,7 @@ use coral_rs::rig::client::CompletionClient;
 use coral_rs::rig::client::ProviderClient;
 use coral_rs::agent::Agent;
 use coral_rs::agent_loop::{AgentLoop};
+use coral_rs::init_tracing;
 use coral_rs::mcp_server::McpConnectionBuilder;
 use coral_rs::repeating_prompt_stream::repeating_prompt_stream;
 use coral_rs::rig::providers::openai::GPT_4_1_MINI;
@@ -12,11 +13,10 @@ use coral_rs::rig::providers::openai;
 
 #[tokio::main]
 async fn main() {
-    let model = GPT_4_1_MINI;
-
-    let subscriber = tracing_subscriber::FmtSubscriber::new();
-    tracing::subscriber::set_global_default(subscriber)
+    init_tracing()
         .expect("setting default subscriber failed");
+
+    let model = GPT_4_1_MINI;
 
     let coral_mcp = McpConnectionBuilder::from_coral_env()
         .connect()
@@ -34,7 +34,7 @@ async fn main() {
     let agent = Agent::new(completion_agent)
         .telemetry(TelemetryMode::OpenAI, model)
         .mcp_server(coral_mcp.clone());
-    
+
     let prompt_stream = repeating_prompt_stream(
         prompt,
         Some(Duration::from_secs(1)),
