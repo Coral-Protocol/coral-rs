@@ -3,6 +3,8 @@ use coral_rs::rig::client::CompletionClient;
 use coral_rs::rig::client::ProviderClient;
 use coral_rs::agent::Agent;
 use coral_rs::agent_loop::{AgentLoop};
+use coral_rs::api::generated::types::McpResources;
+use coral_rs::completion_evaluated_prompt::CompletionEvaluatedPrompt;
 use coral_rs::mcp_server::McpConnectionBuilder;
 use coral_rs::repeating_prompt_stream::repeating_prompt_stream;
 use coral_rs::rig::providers::openai::GPT_4_1_MINI;
@@ -18,7 +20,7 @@ async fn main() {
     tracing::subscriber::set_global_default(subscriber)
         .expect("setting default subscriber failed");
 
-    let coral = McpConnectionBuilder::from_coral_env()
+    let coral_mcp = McpConnectionBuilder::from_coral_env()
         .connect()
         .await.expect("Failed to connect to the Coral server");
 
@@ -29,14 +31,24 @@ async fn main() {
         .max_tokens(512)
         .build();
 
+    let prompt = CompletionEvaluatedPrompt::new()
+        .string("<message>")
+        .coral_resource(coral_mcp.clone(), McpResources::MessageResource)
+        .string("</message>")
+        .string("<instruction>")
+        .all_resources(coral_mcp.clone())
+        .string("</instruction>")
+        .string("send me the contents of both message and instruction elements");
+
     let agent = Agent::new(completion_agent)
         .telemetry(TelemetryMode::OpenAI, model)
-        .mcp_server(coral);
+        .mcp_server(coral_mcp.clone());
+
 
     let prompt_stream = repeating_prompt_stream(
-        "create a thread and send 3 random messages in it",
+        prompt,
         Some(Duration::from_secs(1)),
-        10
+        1
     );
 
     AgentLoop::new(agent, prompt_stream)

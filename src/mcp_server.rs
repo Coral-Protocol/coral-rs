@@ -6,14 +6,13 @@ use rmcp::transport::{ConfigureCommandExt, SseClientTransport, TokioChildProcess
 use rmcp::{RoleClient, ServiceExt};
 use std::sync::Arc;
 use tokio::process::Command;
+use crate::completion_evaluated_prompt::CompletionEvaluatedPrompt;
 
 pub struct McpConnectionBuilder {
     client_info: ClientInfo,
     transport: McpTransport,
     revalidate_tooling: bool,
-    revalidate_resources: bool,
     skip_tooling: bool,
-    skip_resources: bool,
 }
 
 struct SseTransport {
@@ -41,9 +40,7 @@ impl McpConnectionBuilder {
             },
             transport,
             revalidate_tooling: false,
-            revalidate_resources: false,
             skip_tooling: false,
-            skip_resources: false,
         }
     }
 
@@ -78,7 +75,6 @@ impl McpConnectionBuilder {
         Self::sse(std::env::var("CORAL_CONNECTION_URL")
             .expect("CORAL_CONNECTION_URL not set"))
             .protocol_version(ProtocolVersion::V_2024_11_05)
-            .revalidate_resources(true)
     }
 
     ///
@@ -119,26 +115,10 @@ impl McpConnectionBuilder {
     }
 
     ///
-    /// Set to true if this MCP server should revalidate its resources before making requests.
-    /// Coral servers should always have this set to true.
-    pub fn revalidate_resources(mut self, revalidate_resources: bool) -> Self {
-        self.revalidate_resources = revalidate_resources;
-        self
-    }
-
-    ///
     /// Skips processing tooling from this MCP server.  This must be used on servers that do not
     /// support tooling.
     pub fn skip_tooling(mut self, skip_tooling: bool) -> Self {
         self.skip_tooling = skip_tooling;
-        self
-    }
-
-    ///
-    /// Skips processing resources from this MCP server.  This must be used on servers that do not
-    /// support resources.
-    pub fn skip_resources(mut self, skip_resources: bool) -> Self {
-        self.skip_resources = skip_resources;
         self
     }
 
@@ -158,11 +138,9 @@ impl McpConnectionBuilder {
                 Ok(McpServerConnection::new(
                     transport,
                     self.revalidate_tooling,
-                    self.revalidate_resources,
                     self.skip_tooling,
-                    self.skip_resources,
                     sse.url.clone()
-                ))
+                ).into())
             }
             McpTransport::Stdio(stdio) => {
                 let cmd = Command::new(stdio.executable).configure(|c| {
@@ -180,11 +158,9 @@ impl McpConnectionBuilder {
                 Ok(McpServerConnection::new(
                     transport,
                     self.revalidate_tooling,
-                    self.revalidate_resources,
                     self.skip_tooling,
-                    self.skip_resources,
                     stdio.identifier
-                ))
+                ).into())
             }
         }
     }
@@ -192,12 +168,11 @@ impl McpConnectionBuilder {
 
 ///
 /// Represents a live connection to an MCP server.
+#[derive(Clone)]
 pub struct McpServerConnection {
     running_service: Arc<RunningService<RoleClient, ClientInfo>>,
     pub(crate) revalidate_tooling: bool,
-    pub(crate) revalidate_resources: bool,
     pub(crate) skip_tooling: bool,
-    pub(crate) skip_resources: bool,
     pub(crate) identifier: String,
 }
 
@@ -205,17 +180,13 @@ impl McpServerConnection {
     fn new(
         running_service: RunningService<RoleClient, ClientInfo>,
         revalidate_tooling: bool,
-        revalidate_resources: bool,
         skip_tooling: bool,
-        skip_resources: bool,
         identifier: String,
     ) -> Self {
         Self {
             running_service: Arc::new(running_service),
             revalidate_tooling,
-            revalidate_resources,
             skip_tooling,
-            skip_resources,
             identifier
         }
     }
@@ -248,5 +219,22 @@ impl McpServerConnection {
         }
 
         Ok(resource_content_list)
+    }
+
+    ///
+    /// Reads a single URI-referenced resource from this connection
+    pub(crate) async fn read_resource(&self, uri: impl Into<String>) -> Result<Vec<ResourceContents>, Error> {
+        Ok(self.running_service.read_resource(ReadResourceRequestParam {
+            uri: uri.into(),
+        }).await.map_err(Error::McpServiceError)?.contents)
+    }
+
+    ///
+    /// Quick helper function to create a [`CompletionEvaluatedPrompt`] from this MCP connection,
+    /// this will include an [`CompletionEvaluatedPrompt::all_resources`] call from this MCP
+    /// connection, which is recommended for Coral MCP connections.
+    pub fn prompt_with_resources(&self, prompt: impl Into<String>) -> CompletionEvaluatedPrompt {
+        CompletionEvaluatedPrompt::from_string(prompt)
+            .all_resources(self.clone())
     }
 }

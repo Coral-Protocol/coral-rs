@@ -2,31 +2,30 @@ use crate::api::generated::types::{McpToolName, McpToolResult, TelemetryTarget};
 use crate::error::Error;
 use crate::mcp_server::McpServerConnection;
 use crate::telemetry::{TelemetryIdentifier, TelemetryMode, TelemetryRequest};
-use rig::completion::{AssistantContent, Completion, CompletionModel, Document, Message};
+use rig::completion::{AssistantContent, Completion, CompletionModel, Message};
 use rig::message::UserContent;
 use rig::tool::ToolDyn;
 use rig::OneOrMany;
-use rmcp::model::ResourceContents;
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashSet};
 use tracing::{info, warn};
+use crate::completion_evaluated_prompt::CompletionEvaluatedPrompt;
 
 pub struct Agent<M: CompletionModel>  {
     completion_agent: rig::agent::Agent<M>,
     mcp_connections: Vec<ValidatedMcpServerConnection>,
     revalidating_tooling: HashSet<String>,
-    revalidating_resources: HashSet<String>,
     agent_name: String,
     agent_version: String,
     telemetry: TelemetryMode,
     telemetry_url: String,
     telemetry_session_id: String,
     telemetry_model_description: String,
+    preamble: Option<CompletionEvaluatedPrompt>
 }
 
 struct ValidatedMcpServerConnection {
     connection: McpServerConnection,
-    tools_validated: bool,
-    resources_validated: bool,
+    tools_validated: bool
 }
 
 pub struct CompletionResult {
@@ -36,7 +35,7 @@ pub struct CompletionResult {
     /// The texts returned by the completion agent.  It is possible for this to be empty
     pub texts: Vec<String>,
 
-    /// Quantity of tools used. If this is non-zero, it is likely texts is empty.
+    /// Quantity of tools used. If this is non-zero, it is likely texts are empty.
     pub tools_used: u32,
 }
 
@@ -48,13 +47,13 @@ impl<M: CompletionModel> Agent<M> {
             completion_agent,
             mcp_connections: Vec::new(),
             revalidating_tooling: HashSet::new(),
-            revalidating_resources: HashSet::new(),
             agent_name: env!("CARGO_PKG_NAME").to_string(),
             agent_version: env!("CARGO_PKG_VERSION").to_string(),
             telemetry: TelemetryMode::None,
             telemetry_url: String::new(),
             telemetry_session_id: String::new(),
             telemetry_model_description: String::new(),
+            preamble: None,
         }
     }
 
@@ -78,9 +77,18 @@ impl<M: CompletionModel> Agent<M> {
     pub fn mcp_server(mut self, connection: McpServerConnection) -> Self {
         self.mcp_connections.push(ValidatedMcpServerConnection {
             connection,
-            tools_validated: false,
-            resources_validated: false,
+            tools_validated: false
         });
+        self
+    }
+
+    ///
+    /// Sets the preamble for this agent to a specific [`CompletionEvaluatedPrompt`] instance.  Note
+    /// that if this is not set, the default string provided to the inner agent model will be used.
+    ///
+    /// The preamble will be evaluated in each call to [`run_completion`].
+    pub fn preamble(mut self, preamble: CompletionEvaluatedPrompt) -> Self {
+        self.preamble = Some(preamble);
         self
     }
 
@@ -104,7 +112,13 @@ impl<M: CompletionModel> Agent<M> {
     }
 
     ///
-    /// Ensures all tooling is validated for a request
+    /// This function is responsible for making sure every [`McpServerConnection`] provided to this
+    /// agent has their tools validated as requested by the connection for a completion request.
+    ///
+    /// A single [`McpServerConnection`] may choose:
+    /// - To have tooling skipped
+    /// - To have tooling evaluated once
+    /// - To have tooling evaluated before every completion
     async fn validate_mcp_tooling(&mut self) -> Result<(), Error> {
         // Remove any tooling that revalidates
         self.revalidating_tooling.retain(|mcp_tool_name| {
@@ -152,59 +166,29 @@ impl<M: CompletionModel> Agent<M> {
     }
 
     ///
-    /// Ensures all resources are validated for a request
-    async fn validate_mcp_resources(&mut self) -> Result<(), Error> {
-        // Remove resources that revalidate
-        self.revalidating_resources.retain(|id| {
-            self.completion_agent.static_context.retain(|doc| doc.id != *id);
-            false
-        });
-
-        for mcp in self.mcp_connections.iter_mut() {
-            if (mcp.resources_validated && !mcp.connection.revalidate_resources)
-                || mcp.connection.skip_resources {
-                continue;
+    /// If there was a preamble provided to this agent, this function will evaluate it, and if the
+    /// evaluation succeeds, the inner model's preamble field will be overwritten to this newly
+    /// evaluated prompt.
+    ///
+    /// If there was no preamble provided to this agent, nothing will happen here.
+    ///
+    /// If the evaluation of the prompt fails (e.g., failure to locate a resource), this function will
+    /// return an error.
+    async fn validate_preamble(&mut self) -> Result<(), Error> {
+        if let Some(prompt) = &self.preamble {
+            match prompt.evaluate().await {
+                Ok(prompt) => self.completion_agent.preamble = prompt,
+                Err(e) => return Err(e)
             }
-
-            info!("validating resources for MCP server {}", mcp.connection.identifier);
-
-            let mcp_resources: Vec<Document> = mcp.connection.get_resources().await?
-                .into_iter()
-                .flat_map(|x| {
-                    if let ResourceContents::TextResourceContents {
-                        uri,
-                        mime_type,
-                        text
-                    } = x {
-                        Some(Document {
-                            id: uri,
-                            text,
-                            additional_props: mime_type.map_or(
-                                HashMap::new(),
-                                |mime_type| HashMap::from([("mime_type".to_string(), mime_type)])
-                            )
-                        })
-                    }
-                    else {
-                        None
-                    }
-                }).collect();
-
-            mcp.resources_validated = true;
-
-            // If this MCP connection revalidates resources, the list of resources that are
-            // revalidated needs to be recorded so that it can be removed from the completion agent
-            // on the next time this function is called
-            if mcp.connection.revalidate_resources {
-                self.revalidating_resources.extend(mcp_resources.iter().map(|doc| doc.id.clone()))
-            }
-
-            self.completion_agent.static_context.extend(mcp_resources.iter().cloned());
         }
 
         Ok(())
     }
 
+    ///
+    /// Sends telemetry data to the Coral server.  The coral server is identified by the
+    /// CORAL_API_URL environment variable, which is automatically passed to agents orchestrated by
+    /// Coral server
     async fn send_telemetry(
         &self,
         targets: Vec<TelemetryTarget>,
@@ -287,11 +271,8 @@ impl<M: CompletionModel> Agent<M> {
         &mut self,
         mut messages: Vec<Message>
     ) -> Result<CompletionResult, Error> {
-
-        // If any MCP servers were listed as requiring revalidation, make sure that is performed now
-        // so that this request has the most up-to-date list of tools and documents possible.
         self.validate_mcp_tooling().await?;
-        self.validate_mcp_resources().await?;
+        self.validate_preamble().await?;
 
         // Take the last message from the stack as a prompt
         let prompt = messages

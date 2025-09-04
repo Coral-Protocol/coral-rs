@@ -4,19 +4,20 @@ use futures::{Stream, StreamExt};
 use rig::completion::CompletionModel;
 use std::pin::Pin;
 use tracing::{info, warn};
+use crate::completion_evaluated_prompt::CompletionEvaluatedPrompt;
 
 const DEFAULT_ITERATION_TOOL_QUOTA: Option<u32> = Some(64);
 
 pub struct AgentLoop<M: CompletionModel>  {
     agent: Agent<M>,
-    prompt_stream: Pin<Box<dyn Stream<Item=String>>>,
+    prompt_stream: Pin<Box<dyn Stream<Item=CompletionEvaluatedPrompt>>>,
     iteration_tool_quota: Option<u32>
 }
 
 impl<M: CompletionModel>  AgentLoop<M> {
     ///
     /// Creates a new Coral agent loop
-    pub fn new(agent: Agent<M>, prompt_stream: impl Stream<Item=String> + 'static) -> Self {
+    pub fn new(agent: Agent<M>, prompt_stream: impl Stream<Item=CompletionEvaluatedPrompt> + 'static) -> Self {
         Self {
             agent,
             prompt_stream: Box::pin(prompt_stream),
@@ -50,7 +51,7 @@ impl<M: CompletionModel>  AgentLoop<M> {
             iterations += 1;
 
             // An iteration should always start with the loop prompt
-            messages.push(prompt.clone().into());
+            messages.push(prompt.evaluate().await?.into());
 
             let mut depth = 0;
             loop {
