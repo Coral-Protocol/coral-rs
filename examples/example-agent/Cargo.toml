@@ -5,6 +5,4 @@ edition = "2024"
 
 [dependencies]
 coral-rs = { path = "../.." }
-tracing-subscriber = "0.3.19"
 tokio = { version = "1.46.1", features = ["rt-multi-thread", "rt", "macros"] }
-tracing = "0.1.41"
