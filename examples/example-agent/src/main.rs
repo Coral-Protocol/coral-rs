@@ -29,7 +29,7 @@ async fn main() {
         .max_tokens(512)
         .build();
 
-    let prompt = coral_mcp.prompt_with_resources("Repeat to me the Coral instruction set");
+    let prompt = coral_mcp.prompt_with_resources_str("Repeat to me the Coral instruction set");
 
     let agent = Agent::new(completion_agent)
         .telemetry(TelemetryMode::OpenAI, model)

@@ -233,8 +233,19 @@ impl McpServerConnection {
     /// Quick helper function to create a [`CompletionEvaluatedPrompt`] from this MCP connection,
     /// this will include an [`CompletionEvaluatedPrompt::all_resources`] call from this MCP
     /// connection, which is recommended for Coral MCP connections.
-    pub fn prompt_with_resources(&self, prompt: impl Into<String>) -> CompletionEvaluatedPrompt {
+    /// 
+    /// This prompt will start with a passed in string
+    pub fn prompt_with_resources_str(&self, prompt: impl Into<String>) -> CompletionEvaluatedPrompt {
         CompletionEvaluatedPrompt::from_string(prompt)
+            .all_resources(self.clone())
+    }
+
+    ///
+    /// Helper function to create an empty [`CompletionEvaluatedPrompt`] prompt that contains 
+    /// nothing but all the resources provided by this MCP server.  This function is useful when 
+    /// making a very basic agent that only Coral resources as the preamble.  
+    pub fn prompt_with_resources(&self) -> CompletionEvaluatedPrompt {
+        CompletionEvaluatedPrompt::new()
             .all_resources(self.clone())
     }
 }
