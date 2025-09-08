@@ -146,7 +146,8 @@ impl CompletionEvaluatedPrompt {
                         mcp_server_connection.get_resources().await?
                     )
                 }
-            }.as_str())
+            }.as_str());
+            buffer.push('\n');
         }
 
         Ok(buffer)
