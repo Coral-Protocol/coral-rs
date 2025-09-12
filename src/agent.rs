@@ -86,7 +86,7 @@ impl<M: CompletionModel> Agent<M> {
     /// Sets the preamble for this agent to a specific [`CompletionEvaluatedPrompt`] instance.  Note
     /// that if this is not set, the default string provided to the inner agent model will be used.
     ///
-    /// The preamble will be evaluated in each call to [`run_completion`].
+    /// The preamble will be evaluated in each call to [`Self::run_completion`].
     pub fn preamble(mut self, preamble: CompletionEvaluatedPrompt) -> Self {
         self.preamble = Some(preamble);
         self

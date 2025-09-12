@@ -125,7 +125,7 @@ impl CompletionEvaluatedPrompt {
     ///
     /// Evaluates all parts into a new string.
     ///
-    /// This function can return an [`coral_rs::Error`] if the prompt contains resources that fail
+    /// This function can return an [`Error`] if the prompt contains resources that fail
     /// to get fetched here.  The potential for resources is also the reason that this function is
     /// async.
     ///

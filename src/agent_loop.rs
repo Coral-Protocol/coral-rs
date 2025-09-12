@@ -6,7 +6,7 @@ use std::pin::Pin;
 use tracing::{info, warn};
 use crate::completion_evaluated_prompt::CompletionEvaluatedPrompt;
 
-const DEFAULT_ITERATION_TOOL_QUOTA: Option<u32> = Some(64);
+pub const DEFAULT_ITERATION_TOOL_QUOTA: Option<u32> = Some(64);
 
 pub struct AgentLoop<M: CompletionModel>  {
     agent: Agent<M>,
