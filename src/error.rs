@@ -3,6 +3,8 @@ use rmcp::service::ClientInitializeError;
 use rmcp::transport::sse_client::SseTransportError;
 use rmcp::ServiceError;
 use thiserror::Error;
+use crate::api::generated::types::RouteException;
+use progenitor::progenitor_client::{Error as ProgenitorError};
 
 #[derive(Debug, Error)]
 pub enum Error {
@@ -25,5 +27,11 @@ pub enum Error {
     CompletionError(rig::completion::CompletionError),
 
     #[error("tool error: {0}")]
-    ToolsetError(ToolSetError)
+    ToolsetError(ToolSetError),
+
+    #[error("budget exhausted")]
+    BudgetExhausted,
+
+    #[error("api error {0}")]
+    ApiError(ProgenitorError<RouteException>),
 }

@@ -6,6 +6,7 @@ pub mod telemetry;
 pub mod api;
 pub mod repeating_prompt_stream;
 pub mod completion_evaluated_prompt;
+pub mod claim_manager;
 
 use std::io;
 pub use rig;

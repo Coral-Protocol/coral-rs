@@ -8,6 +8,7 @@ use rig::tool::ToolDyn;
 use rig::OneOrMany;
 use std::collections::{HashSet};
 use tracing::{info, warn};
+use crate::claim_manager::ClaimManager;
 use crate::completion_evaluated_prompt::CompletionEvaluatedPrompt;
 
 pub struct Agent<M: CompletionModel>  {
@@ -20,7 +21,8 @@ pub struct Agent<M: CompletionModel>  {
     telemetry_url: String,
     telemetry_session_id: String,
     telemetry_model_description: String,
-    preamble: Option<CompletionEvaluatedPrompt>
+    preamble: Option<CompletionEvaluatedPrompt>,
+    claim_manager: Option<ClaimManager>
 }
 
 struct ValidatedMcpServerConnection {
@@ -54,6 +56,7 @@ impl<M: CompletionModel> Agent<M> {
             telemetry_session_id: String::new(),
             telemetry_model_description: String::new(),
             preamble: None,
+            claim_manager: None,
         }
     }
 
@@ -108,6 +111,14 @@ impl<M: CompletionModel> Agent<M> {
             .expect("CORAL_SESSION_ID not set");
         self.telemetry_model_description = model_description.into();
 
+        self
+    }
+
+    ///
+    /// Sets the claim manager to use it with this Agent.  If no claim manager is set, no claims
+    /// will be made for this agent.  If you plan to export an agent, you must claim from the agent.
+    pub fn claim_manager(mut self, claim_manager: ClaimManager) -> Self {
+        self.claim_manager = Some(claim_manager);
         self
     }
 
@@ -291,6 +302,10 @@ impl<M: CompletionModel> Agent<M> {
             content: resp.choice.clone(),
         });
 
+        if let Some(claim_manager) = &self.claim_manager {
+            claim_manager.claim_tokens(&resp.usage).await?;
+        }
+
         let mut tools_used = 0;
         let mut texts = Vec::new();
         let mut telemetry_targets = Vec::new();
@@ -307,6 +322,10 @@ impl<M: CompletionModel> Agent<M> {
                         )
                         .await
                         .map_err(Error::ToolsetError)?;
+
+                    if let Some(claim_manager) = &self.claim_manager {
+                        claim_manager.claim_tool_call(tool_call.function.name.clone()).await?;
+                    }
 
                     telemetry_targets.extend(Self::find_telemetry_targets(&tool_call.function.name, &output));
 
@@ -335,6 +354,15 @@ impl<M: CompletionModel> Agent<M> {
 
         if !telemetry_targets.is_empty() && !matches!(self.telemetry, TelemetryMode::None) {
             self.send_telemetry(telemetry_targets, messages.clone()).await;
+        }
+
+        if let Some(claim_manager) = &self.claim_manager {
+            if tools_used == 0 {
+                claim_manager.claim_iteration().await?;
+            }
+            else {
+                claim_manager.claim_tool_iteration().await?;
+            }
         }
 
         Ok(CompletionResult {
