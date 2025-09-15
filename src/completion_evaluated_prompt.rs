@@ -107,14 +107,10 @@ impl CompletionEvaluatedPrompt {
             .map(|x| {
                 match x {
                     ResourceContents::TextResourceContents {
-                        uri: _uri,
-                        mime_type: _mime_type,
-                        text
+                        text, ..
                     } => text,
                     ResourceContents::BlobResourceContents {
-                        uri: _uri,
-                        mime_type: _mime_type,
-                        blob
+                        blob, ..
                     } => blob,
                 }.clone()
             })
