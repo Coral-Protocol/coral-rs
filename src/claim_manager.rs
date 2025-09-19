@@ -305,7 +305,7 @@ impl ClaimManager {
                 AgentClaimAmount::Usd(usd) => ((usd / budget.coral_usd_price) * MICRO_CORAL_TO_CORAL) as i64
             };
 
-            if budget.remaining_budget < min_micro {
+            if budget.remaining_budget <= min_micro {
                 return Err(Error::BudgetExhausted)
             }
         }
