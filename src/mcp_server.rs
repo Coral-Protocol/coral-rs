@@ -161,8 +161,7 @@ impl McpConnectionBuilder {
                     self.revalidate_tooling,
                     self.skip_tooling,
                     stdio.identifier,
-                )
-                .into())
+                ))
             }
         }
     }

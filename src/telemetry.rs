@@ -125,7 +125,7 @@ impl<'a, M: CompletionModel> TelemetryRequest<'a, M> {
                 model_description: self.model_description.clone(),
                 preamble: Some(self.agent.preamble.clone()),
                 resources: Self::convert_documents(self.agent.static_context.clone()),
-                temperature: self.agent.temperature.clone(),
+                temperature: self.agent.temperature,
                 tools: Self::convert_documents(
                     self.agent.tools.documents().await.unwrap_or_default(),
                 ),

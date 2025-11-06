@@ -16,10 +16,10 @@ pub fn repeating_prompt_stream(
                     return None;
                 }
 
-                if reps > 0 {
-                    if let Some(delay_duration) = delay {
-                        sleep(delay_duration).await;
-                    }
+                if reps > 0
+                    && let Some(delay_duration) = delay
+                {
+                    sleep(delay_duration).await;
                 }
 
                 Some((prompt.clone(), (prompt, delay, max_reps, reps + 1)))

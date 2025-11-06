@@ -226,7 +226,7 @@ impl<M: CompletionModel> Agent<M> {
             self.telemetry_model_description.clone(),
             messages,
         )
-        .telemetry_mode(self.telemetry.clone())
+        .telemetry_mode(self.telemetry)
         .send()
         .await;
 
@@ -243,31 +243,30 @@ impl<M: CompletionModel> Agent<M> {
     ///
     /// At the moment, telemetry is only attached to Coral messages.  So this function will return
     /// a TelemetryTarget from a Coral message if passed a call to [`McpTooling::CoralSendMessage`]
-    fn find_telemetry_targets(name: &String, output: &String) -> Vec<TelemetryTarget> {
+    fn find_telemetry_targets(name: &String, output: &str) -> Vec<TelemetryTarget> {
         let mut telemetry_targets = Vec::new();
 
-        match serde_json::from_str::<McpToolName>(format!("\"{name}\"").as_str()) {
-            Ok(McpToolName::CoralSendMessage) => {
-                match serde_json::from_str::<McpToolResult>(output) {
-                    Ok(McpToolResult::SendMessageSuccess { message }) => {
-                        telemetry_targets.push(TelemetryTarget {
-                            message_id: message.id,
-                            thread_id: message.thread_id,
-                        })
-                    }
-                    Err(e) => {
-                        warn!(
-                            "Identified CoralSendMessage tool call, but couldn't parse the output: {e}"
-                        );
-                    }
-                    Ok(other) => {
-                        warn!(
-                            "Identified CoralSendMessage tool call, but got a non SendMessageSuccess return: {other:#?}"
-                        );
-                    }
+        if let Ok(McpToolName::CoralSendMessage) =
+            serde_json::from_str::<McpToolName>(format!("\"{name}\"").as_str())
+        {
+            match serde_json::from_str::<McpToolResult>(output) {
+                Ok(McpToolResult::SendMessageSuccess { message }) => {
+                    telemetry_targets.push(TelemetryTarget {
+                        message_id: message.id,
+                        thread_id: message.thread_id,
+                    })
+                }
+                Err(e) => {
+                    warn!(
+                        "Identified CoralSendMessage tool call, but couldn't parse the output: {e}"
+                    );
+                }
+                Ok(other) => {
+                    warn!(
+                        "Identified CoralSendMessage tool call, but got a non SendMessageSuccess return: {other:#?}"
+                    );
                 }
             }
-            _ => {}
         }
 
         telemetry_targets
@@ -286,8 +285,8 @@ impl<M: CompletionModel> Agent<M> {
     ///
     /// # Arguments
     /// * `messages` - The full message history for this completion request.  It is assumed that
-    /// this contains the necessary prompts for the completion.  This function will panic if given
-    /// an empty message history.
+    ///   this contains the necessary prompts for the completion.  This function will panic if given
+    ///   an empty message history.
     ///
     pub async fn run_completion(
         &mut self,
@@ -326,7 +325,7 @@ impl<M: CompletionModel> Agent<M> {
         for choice in resp.choice {
             match choice {
                 AssistantContent::ToolCall(tool_call) => {
-                    tools_used = tools_used + 1;
+                    tools_used += 1;
 
                     let output = self
                         .completion_agent

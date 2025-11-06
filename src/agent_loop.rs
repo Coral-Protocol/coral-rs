@@ -57,7 +57,7 @@ impl<M: CompletionModel> AgentLoop<M> {
 
             let mut depth = 0;
             loop {
-                depth = depth + 1;
+                depth += 1;
                 info!(
                     "Tool iteration {}/{} [prompt iteration {iterations}]",
                     depth + 1,

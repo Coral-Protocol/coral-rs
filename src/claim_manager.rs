@@ -336,3 +336,9 @@ impl ClaimManager {
     }
 }
 
+impl Default for ClaimManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+

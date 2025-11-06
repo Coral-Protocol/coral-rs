@@ -146,3 +146,9 @@ impl CompletionEvaluatedPrompt {
     }
 }
 
+impl Default for CompletionEvaluatedPrompt {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
