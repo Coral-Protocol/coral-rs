@@ -123,7 +123,7 @@ impl<'a, M: CompletionModel> TelemetryRequest<'a, M> {
                 additional_params: Default::default(),
                 max_tokens: self.agent.max_tokens.map(|t| t as i64),
                 model_description: self.model_description.clone(),
-                preamble: Some(self.agent.preamble.clone()),
+                preamble: self.agent.preamble.clone(),
                 resources: Self::convert_documents(self.agent.static_context.clone()),
                 temperature: self.agent.temperature.clone(),
                 tools: Self::convert_documents(
