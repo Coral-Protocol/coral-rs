@@ -1,30 +1,32 @@
 use crate::agent::Agent;
+use crate::completion_evaluated_prompt::CompletionEvaluatedPrompt;
 use crate::error::Error;
 use futures::{Stream, StreamExt};
 use rig::completion::CompletionModel;
 use std::pin::Pin;
 use tracing::{info, warn};
-use crate::completion_evaluated_prompt::CompletionEvaluatedPrompt;
 
 pub const DEFAULT_ITERATION_TOOL_QUOTA: Option<u32> = Some(64);
 
-pub struct AgentLoop<M: CompletionModel>  {
+pub struct AgentLoop<M: CompletionModel> {
     agent: Agent<M>,
-    prompt_stream: Pin<Box<dyn Stream<Item=CompletionEvaluatedPrompt>>>,
-    iteration_tool_quota: Option<u32>
+    prompt_stream: Pin<Box<dyn Stream<Item = CompletionEvaluatedPrompt>>>,
+    iteration_tool_quota: Option<u32>,
 }
 
-impl<M: CompletionModel>  AgentLoop<M> {
+impl<M: CompletionModel> AgentLoop<M> {
     ///
     /// Creates a new Coral agent loop
-    pub fn new(agent: Agent<M>, prompt_stream: impl Stream<Item=CompletionEvaluatedPrompt> + 'static) -> Self {
+    pub fn new(
+        agent: Agent<M>,
+        prompt_stream: impl Stream<Item = CompletionEvaluatedPrompt> + 'static,
+    ) -> Self {
         Self {
             agent,
             prompt_stream: Box::pin(prompt_stream),
-            iteration_tool_quota: DEFAULT_ITERATION_TOOL_QUOTA
+            iteration_tool_quota: DEFAULT_ITERATION_TOOL_QUOTA,
         }
     }
-
 
     ///
     /// The maximum number of tools that can be used during one iteration.  If an iteration reaches
@@ -56,9 +58,11 @@ impl<M: CompletionModel>  AgentLoop<M> {
             let mut depth = 0;
             loop {
                 depth = depth + 1;
-                info!("Tool iteration {}/{} [prompt iteration {iterations}]",
+                info!(
+                    "Tool iteration {}/{} [prompt iteration {iterations}]",
                     depth + 1,
-                    self.iteration_tool_quota.map_or("unlimited".to_string(), |x| x.to_string()),
+                    self.iteration_tool_quota
+                        .map_or("unlimited".to_string(), |x| x.to_string()),
                 );
 
                 let res = self.agent.run_completion(messages).await?;
@@ -82,3 +86,4 @@ impl<M: CompletionModel>  AgentLoop<M> {
         Ok(())
     }
 }
+

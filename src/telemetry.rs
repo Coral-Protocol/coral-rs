@@ -1,6 +1,8 @@
-use crate::api::generated::types::{OpenAiMessage, Telemetry, TelemetryMessages, TelemetryPost, TelemetryTarget, RouteException};
 use crate::api::generated::Client;
-use progenitor::progenitor_client::{Error as ProgenitorError};
+use crate::api::generated::types::{
+    OpenAiMessage, RouteException, Telemetry, TelemetryMessages, TelemetryPost, TelemetryTarget,
+};
+use progenitor::progenitor_client::Error as ProgenitorError;
 use rig::completion::{CompletionModel, Document};
 use serde::Serialize;
 use thiserror::Error;
@@ -15,7 +17,7 @@ pub(crate) struct TelemetryRequest<'a, M: CompletionModel> {
     messages: Vec<rig::completion::Message>,
     telemetry_mode: TelemetryMode,
     agent: &'a rig::agent::Agent<M>,
-    model_description: String
+    model_description: String,
 }
 
 #[derive(Serialize, Copy, Clone)]
@@ -60,7 +62,7 @@ impl<'a, M: CompletionModel> TelemetryRequest<'a, M> {
         url: String,
         agent: &'a rig::agent::Agent<M>,
         model_description: impl Into<String>,
-        messages: Vec<rig::completion::Message>
+        messages: Vec<rig::completion::Message>,
     ) -> Self {
         Self {
             id,
@@ -84,7 +86,8 @@ impl<'a, M: CompletionModel> TelemetryRequest<'a, M> {
     fn messages_openai(&self) -> Option<Vec<OpenAiMessage>> {
         let mut messages = Vec::new();
         for msg in &self.messages {
-            let openai_messages: Vec<rig::providers::openai::Message> = msg.clone().try_into().ok()?;
+            let openai_messages: Vec<rig::providers::openai::Message> =
+                msg.clone().try_into().ok()?;
             messages.extend(openai_messages);
         }
 
@@ -101,42 +104,44 @@ impl<'a, M: CompletionModel> TelemetryRequest<'a, M> {
     /// Converts Rig documents into Telemetry documents.  Ideally identical types, but Telemetry
     /// comes from an OpenAPI spec and is a different rust type.
     fn convert_documents(resources: Vec<Document>) -> Vec<crate::api::generated::types::Document> {
-        resources.into_iter().map(|x| {
-            crate::api::generated::types::Document {
+        resources
+            .into_iter()
+            .map(|x| crate::api::generated::types::Document {
                 id: x.id,
                 text: x.text,
-            }
-        }).collect()
+            })
+            .collect()
     }
 
     ///
     /// Formats the Telemetry struct into data that the Coral server expects
-    async fn format(self) -> TelemetryPost  {
+    async fn format(self) -> TelemetryPost {
         TelemetryPost {
             targets: self.id.targets.clone(),
             data: Telemetry {
-               // additional_params: self.agent.additional_params.clone(),
+                // additional_params: self.agent.additional_params.clone(),
                 additional_params: Default::default(),
                 max_tokens: self.agent.max_tokens.map(|t| t as i64),
                 model_description: self.model_description.clone(),
                 preamble: Some(self.agent.preamble.clone()),
                 resources: Self::convert_documents(self.agent.static_context.clone()),
                 temperature: self.agent.temperature.clone(),
-                tools: Self::convert_documents(self.agent.tools.documents().await.unwrap_or_default()),
+                tools: Self::convert_documents(
+                    self.agent.tools.documents().await.unwrap_or_default(),
+                ),
                 messages: match self.telemetry_mode {
-                    TelemetryMode::OpenAI => {
-                        match self.messages_openai() {
-                            None => {
-                                warn!("OpenAI message format requested for telemetry but model response could not convert.  Falling back to generic format.");
-                                TelemetryMessages::Generic(self.messages_generic())
-                            }
-                            Some(messages) => TelemetryMessages::OpenAi(messages),
+                    TelemetryMode::OpenAI => match self.messages_openai() {
+                        None => {
+                            warn!(
+                                "OpenAI message format requested for telemetry but model response could not convert.  Falling back to generic format."
+                            );
+                            TelemetryMessages::Generic(self.messages_generic())
                         }
+                        Some(messages) => TelemetryMessages::OpenAi(messages),
                     },
                     TelemetryMode::Generic => TelemetryMessages::Generic(self.messages_generic()),
                     TelemetryMode::None => panic!("cannot send telemetry in None mode"),
                 },
-
             },
         }
     }
@@ -163,3 +168,4 @@ impl<'a, M: CompletionModel> TelemetryRequest<'a, M> {
         Ok(())
     }
 }
+
