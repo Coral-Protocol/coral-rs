@@ -3,24 +3,20 @@ pub mod generated {
     include!(concat!(env!("OUT_DIR"), "/api_v1.rs"));
 }
 
-use std::ops::{Div, Mul};
-use generated::types;
 use crate::api::generated::types::AgentClaimAmount;
+use generated::types;
+use std::ops::{Div, Mul};
 
 impl From<rig::message::Message> for types::GenericMessage {
     fn from(value: rig::message::Message) -> Self {
         match value {
-            rig::message::Message::User { content } => {
-                types::GenericMessage::User {
-                    content: content.into_iter().map(|x| x.into()).collect()
-                }
-            }
-            rig::message::Message::Assistant { id, content } => {
-                types::GenericMessage::Assistant {
-                    id,
-                    content: content.into_iter().map(|x| x.into()).collect()
-                }
-            }
+            rig::message::Message::User { content } => types::GenericMessage::User {
+                content: content.into_iter().map(|x| x.into()).collect(),
+            },
+            rig::message::Message::Assistant { id, content } => types::GenericMessage::Assistant {
+                id,
+                content: content.into_iter().map(|x| x.into()).collect(),
+            },
         }
     }
 }
@@ -30,46 +26,35 @@ impl From<rig::message::UserContent> for types::GenericUserContent {
         match value {
             rig::message::UserContent::Text(text) => {
                 types::GenericUserContent::Text { text: text.text }
-            },
+            }
             rig::message::UserContent::ToolResult(tool_result) => {
                 types::GenericUserContent::ToolResult {
                     id: tool_result.id,
                     call_id: tool_result.call_id,
-                    content: tool_result.content
-                        .into_iter()
-                        .map(|x| x.into())
-                        .collect(),
-                }
-            },
-            rig::message::UserContent::Image(image) => {
-                types::GenericUserContent::Image {
-                    data: image.data,
-                    detail: image.detail.map(Into::into),
-                    format: image.format.map(Into::into),
-                    media_type: image.media_type.map(Into::into),
-                }
-            },
-            rig::message::UserContent::Audio(audio) => {
-                types::GenericUserContent::Audio {
-                    data: audio.data,
-                    format: audio.format.map(Into::into),
-                    media_type: audio.media_type.map(Into::into),
-                }
-            },
-            rig::message::UserContent::Document(doc) => {
-                types::GenericUserContent::Document {
-                    data: doc.data,
-                    format: doc.format.map(Into::into),
-                    media_type: doc.media_type.map(Into::into)
-                }
-            },
-            rig::message::UserContent::Video(video) => {
-                types::GenericUserContent::Video {
-                    data: video.data,
-                    format: video.format.map(Into::into),
-                    media_type: video.media_type.map(Into::into),
+                    content: tool_result.content.into_iter().map(|x| x.into()).collect(),
                 }
             }
+            rig::message::UserContent::Image(image) => types::GenericUserContent::Image {
+                data: image.data,
+                detail: image.detail.map(Into::into),
+                format: image.format.map(Into::into),
+                media_type: image.media_type.map(Into::into),
+            },
+            rig::message::UserContent::Audio(audio) => types::GenericUserContent::Audio {
+                data: audio.data,
+                format: audio.format.map(Into::into),
+                media_type: audio.media_type.map(Into::into),
+            },
+            rig::message::UserContent::Document(doc) => types::GenericUserContent::Document {
+                data: doc.data,
+                format: doc.format.map(Into::into),
+                media_type: doc.media_type.map(Into::into),
+            },
+            rig::message::UserContent::Video(video) => types::GenericUserContent::Video {
+                data: video.data,
+                format: video.format.map(Into::into),
+                media_type: video.media_type.map(Into::into),
+            },
         }
     }
 }
@@ -78,17 +63,15 @@ impl From<rig::message::AssistantContent> for types::GenericAssistantContent {
     fn from(value: rig::message::AssistantContent) -> Self {
         match value {
             rig::message::AssistantContent::Text(text) => {
-                types::GenericAssistantContent::AssistantText {
-                    text: text.text
-                }
-            },
+                types::GenericAssistantContent::AssistantText { text: text.text }
+            }
             rig::message::AssistantContent::ToolCall(tool_call) => {
                 types::GenericAssistantContent::AssistantToolCall {
                     call_id: tool_call.call_id,
                     function: tool_call.function.into(),
                     id: tool_call.id,
                 }
-            },
+            }
             rig::message::AssistantContent::Reasoning(reasoning) => {
                 types::GenericAssistantContent::AssistantReasoning {
                     reasoning: reasoning.reasoning,
@@ -103,7 +86,7 @@ impl From<rig::message::ToolResultContent> for types::GenericToolResultContent {
         match value {
             rig::message::ToolResultContent::Text(text) => {
                 types::GenericToolResultContent::ToolText { text: text.text }
-            },
+            }
             rig::message::ToolResultContent::Image(image) => {
                 types::GenericToolResultContent::ToolImage {
                     data: image.data,
@@ -130,7 +113,7 @@ impl From<rig::message::ContentFormat> for types::ContentFormat {
     fn from(value: rig::message::ContentFormat) -> Self {
         match value {
             rig::message::ContentFormat::String => types::ContentFormat::String,
-            rig::message::ContentFormat::Base64 => types::ContentFormat::Base64
+            rig::message::ContentFormat::Base64 => types::ContentFormat::Base64,
         }
     }
 }
@@ -201,48 +184,36 @@ impl From<rig::completion::message::ToolFunction> for types::ToolFunction {
 impl From<rig::providers::openai::Message> for types::OpenAiMessage {
     fn from(value: rig::providers::openai::Message) -> Self {
         match value {
-            rig::providers::openai::Message::System {
-                content,
-                name
-            } => {
+            rig::providers::openai::Message::System { content, name } => {
                 types::OpenAiMessage::Developer {
                     content: content.into_iter().map(Into::into).collect(),
                     name,
                 }
-            },
-            rig::providers::openai::Message::User {
-                content,
-                name
-            } => {
-                types::OpenAiMessage::User {
-                    content: content.into_iter().map(Into::into).collect(),
-                    name
-                }
+            }
+            rig::providers::openai::Message::User { content, name } => types::OpenAiMessage::User {
+                content: content.into_iter().map(Into::into).collect(),
+                name,
             },
             rig::providers::openai::Message::Assistant {
                 content,
                 refusal,
                 audio,
                 name,
-                tool_calls
-            } => {
-                types::OpenAiMessage::Assistant {
-                    content: content.into_iter().map(Into::into).collect(),
-                    refusal,
-                    audio: audio.map(Into::into),
-                    name,
-                    tool_calls: tool_calls.into_iter().map(Into::into).collect(),
-                }
+                tool_calls,
+            } => types::OpenAiMessage::Assistant {
+                content: content.into_iter().map(Into::into).collect(),
+                refusal,
+                audio: audio.map(Into::into),
+                name,
+                tool_calls: tool_calls.into_iter().map(Into::into).collect(),
             },
             rig::providers::openai::Message::ToolResult {
                 tool_call_id,
-                content
-            } => {
-                types::OpenAiMessage::Tool {
-                    tool_call_id,
-                    content: content.into_iter().map(Into::into).collect(),
-                }
-            }
+                content,
+            } => types::OpenAiMessage::Tool {
+                tool_call_id,
+                content: content.into_iter().map(Into::into).collect(),
+            },
         }
     }
 }
@@ -264,12 +235,12 @@ impl From<rig::providers::openai::UserContent> for types::OpenAiUserContent {
             }
             rig::providers::openai::UserContent::Image { image_url } => {
                 types::OpenAiUserContent::ImageUrl {
-                    image_url: image_url.into()
+                    image_url: image_url.into(),
                 }
             }
             rig::providers::openai::UserContent::Audio { input_audio } => {
                 types::OpenAiUserContent::Audio {
-                    input_audio: input_audio.into()
+                    input_audio: input_audio.into(),
                 }
             }
         }
@@ -312,7 +283,7 @@ impl From<rig::providers::openai::ToolResultContent> for types::OpenAiToolResult
 impl From<rig::providers::openai::SystemContentType> for types::SystemContentType {
     fn from(value: rig::providers::openai::SystemContentType) -> Self {
         match value {
-            rig::providers::openai::SystemContentType::Text => types::SystemContentType::Text
+            rig::providers::openai::SystemContentType::Text => types::SystemContentType::Text,
         }
     }
 }
@@ -338,7 +309,7 @@ impl From<rig::providers::openai::InputAudio> for types::InputAudio {
 impl From<rig::providers::openai::ToolType> for types::ToolType {
     fn from(value: rig::providers::openai::ToolType) -> Self {
         match value {
-            rig::providers::openai::ToolType::Function => types::ToolType::Function
+            rig::providers::openai::ToolType::Function => types::ToolType::Function,
         }
     }
 }
@@ -354,9 +325,7 @@ impl From<rig::providers::openai::Function> for types::Function {
 
 impl From<rig::providers::openai::AudioAssistant> for types::AudioAssistant {
     fn from(value: rig::providers::openai::AudioAssistant) -> Self {
-        types::AudioAssistant {
-            id: value.id,
-        }
+        types::AudioAssistant { id: value.id }
     }
 }
 
@@ -365,7 +334,7 @@ impl AgentClaimAmount {
         match self {
             AgentClaimAmount::Coral(coral) => *coral == 0.0,
             AgentClaimAmount::MicroCoral(micro) => *micro == 0,
-            AgentClaimAmount::Usd(usd) => *usd == 0.0
+            AgentClaimAmount::Usd(usd) => *usd == 0.0,
         }
     }
 }
@@ -375,7 +344,7 @@ impl std::fmt::Display for AgentClaimAmount {
         match self {
             AgentClaimAmount::Coral(coral) => write!(f, "{:.6} coral", coral),
             AgentClaimAmount::MicroCoral(micro) => write!(f, "{} micro-coral", micro),
-            AgentClaimAmount::Usd(usd) => write!(f, "{:.6} USD", usd)
+            AgentClaimAmount::Usd(usd) => write!(f, "{:.6} USD", usd),
         }
     }
 }
