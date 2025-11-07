@@ -1,17 +1,17 @@
 use crate::api::generated::types::{McpToolName, McpToolResult, TelemetryTarget};
+use crate::claim_manager::ClaimManager;
+use crate::completion_evaluated_prompt::CompletionEvaluatedPrompt;
 use crate::error::Error;
 use crate::mcp_server::McpServerConnection;
 use crate::telemetry::{TelemetryIdentifier, TelemetryMode, TelemetryRequest};
+use rig::OneOrMany;
 use rig::completion::{AssistantContent, Completion, CompletionModel, Message};
 use rig::message::UserContent;
 use rig::tool::ToolDyn;
-use rig::OneOrMany;
-use std::collections::{HashSet};
+use std::collections::HashSet;
 use tracing::{info, warn};
-use crate::claim_manager::ClaimManager;
-use crate::completion_evaluated_prompt::CompletionEvaluatedPrompt;
 
-pub struct Agent<M: CompletionModel>  {
+pub struct Agent<M: CompletionModel> {
     completion_agent: rig::agent::Agent<M>,
     mcp_connections: Vec<ValidatedMcpServerConnection>,
     revalidating_tooling: HashSet<String>,
@@ -22,12 +22,12 @@ pub struct Agent<M: CompletionModel>  {
     telemetry_session_id: String,
     telemetry_model_description: String,
     preamble: Option<CompletionEvaluatedPrompt>,
-    claim_manager: Option<ClaimManager>
+    claim_manager: Option<ClaimManager>,
 }
 
 struct ValidatedMcpServerConnection {
     connection: McpServerConnection,
-    tools_validated: bool
+    tools_validated: bool,
 }
 
 pub struct CompletionResult {
@@ -80,7 +80,7 @@ impl<M: CompletionModel> Agent<M> {
     pub fn mcp_server(mut self, connection: McpServerConnection) -> Self {
         self.mcp_connections.push(ValidatedMcpServerConnection {
             connection,
-            tools_validated: false
+            tools_validated: false,
         });
         self
     }
@@ -103,12 +103,15 @@ impl<M: CompletionModel> Agent<M> {
     /// variables are required (this function will panic if they are not provided):
     /// - CORAL_API_URL
     /// - CORAL_SESSION_ID
-    pub fn telemetry(mut self, telemetry: TelemetryMode, model_description: impl Into<String>) -> Self {
+    pub fn telemetry(
+        mut self,
+        telemetry: TelemetryMode,
+        model_description: impl Into<String>,
+    ) -> Self {
         self.telemetry = telemetry;
-        self.telemetry_url = std::env::var("CORAL_API_URL")
-            .expect("CORAL_API_URL not set");
-        self.telemetry_session_id = std::env::var("CORAL_SESSION_ID")
-            .expect("CORAL_SESSION_ID not set");
+        self.telemetry_url = std::env::var("CORAL_API_URL").expect("CORAL_API_URL not set");
+        self.telemetry_session_id =
+            std::env::var("CORAL_SESSION_ID").expect("CORAL_SESSION_ID not set");
         self.telemetry_model_description = model_description.into();
 
         self
@@ -133,22 +136,29 @@ impl<M: CompletionModel> Agent<M> {
     async fn validate_mcp_tooling(&mut self) -> Result<(), Error> {
         // Remove any tooling that revalidates
         self.revalidating_tooling.retain(|mcp_tool_name| {
-            self.completion_agent.static_tools.retain(|tool_name| tool_name != mcp_tool_name);
+            self.completion_agent
+                .static_tools
+                .retain(|tool_name| tool_name != mcp_tool_name);
             self.completion_agent.tools.delete_tool(mcp_tool_name);
             false
         });
 
         let mut tools = Vec::new();
         for mcp in self.mcp_connections.iter_mut() {
-            if (mcp.tools_validated && !mcp.connection.revalidate_tooling) ||
-                mcp.connection.skip_tooling {
+            if (mcp.tools_validated && !mcp.connection.revalidate_tooling)
+                || mcp.connection.skip_tooling
+            {
                 continue;
             }
 
             let mcp_tools = mcp.connection.get_tools().await?;
             if !mcp.tools_validated {
                 for tool in mcp_tools.iter() {
-                    info!("adding tool \"{}\" from mcp server \"{}\"", tool.name(), mcp.connection.identifier);
+                    info!(
+                        "adding tool \"{}\" from mcp server \"{}\"",
+                        tool.name(),
+                        mcp.connection.identifier
+                    );
                 }
             }
 
@@ -158,16 +168,18 @@ impl<M: CompletionModel> Agent<M> {
             // needs to be recorded so that it can be removed from the completion agent on the next
             // time this function is called
             if mcp.connection.revalidate_tooling {
-                self.revalidating_tooling.extend(mcp_tools.iter().map(|tool| tool.name().clone()))
+                self.revalidating_tooling
+                    .extend(mcp_tools.iter().map(|tool| tool.name().clone()))
             }
-
 
             tools.extend(mcp_tools);
         }
 
         // Add new or revalidated tooling to the completion agent's tooling
         let agent_tools = std::mem::take(&mut self.completion_agent.tools);
-        self.completion_agent.static_tools.extend(tools.iter().map(|tool| tool.name().clone()));
+        self.completion_agent
+            .static_tools
+            .extend(tools.iter().map(|tool| tool.name().clone()));
         self.completion_agent.tools = tools.into_iter().fold(agent_tools, |mut toolset, tool| {
             toolset.add_tool(tool);
             toolset
@@ -189,7 +201,7 @@ impl<M: CompletionModel> Agent<M> {
         if let Some(prompt) = &self.preamble {
             match prompt.evaluate().await {
                 Ok(prompt) => self.completion_agent.preamble = prompt,
-                Err(e) => return Err(e)
+                Err(e) => return Err(e),
             }
         }
 
@@ -200,11 +212,7 @@ impl<M: CompletionModel> Agent<M> {
     /// Sends telemetry data to the Coral server.  The coral server is identified by the
     /// CORAL_API_URL environment variable, which is automatically passed to agents orchestrated by
     /// Coral server
-    async fn send_telemetry(
-        &self,
-        targets: Vec<TelemetryTarget>,
-        messages: Vec<Message>
-    ) {
+    async fn send_telemetry(&self, targets: Vec<TelemetryTarget>, messages: Vec<Message>) {
         let target_count = targets.len();
         let id = TelemetryIdentifier {
             targets,
@@ -218,14 +226,13 @@ impl<M: CompletionModel> Agent<M> {
             self.telemetry_model_description.clone(),
             messages,
         )
-            .telemetry_mode(self.telemetry.clone())
-            .send()
-            .await;
+        .telemetry_mode(self.telemetry.clone())
+        .send()
+        .await;
 
         if let Err(e) = res {
             warn!("Error sending telemetry: {e}")
-        }
-        else {
+        } else {
             info!("Telemetry attached to {target_count} messages");
         }
     }
@@ -249,10 +256,14 @@ impl<M: CompletionModel> Agent<M> {
                         })
                     }
                     Err(e) => {
-                        warn!("Identified CoralSendMessage tool call, but couldn't parse the output: {e}");
-                    },
+                        warn!(
+                            "Identified CoralSendMessage tool call, but couldn't parse the output: {e}"
+                        );
+                    }
                     Ok(other) => {
-                        warn!("Identified CoralSendMessage tool call, but got a non SendMessageSuccess return: {other:#?}");
+                        warn!(
+                            "Identified CoralSendMessage tool call, but got a non SendMessageSuccess return: {other:#?}"
+                        );
                     }
                 }
             }
@@ -280,7 +291,7 @@ impl<M: CompletionModel> Agent<M> {
     ///
     pub async fn run_completion(
         &mut self,
-        mut messages: Vec<Message>
+        mut messages: Vec<Message>,
     ) -> Result<CompletionResult, Error> {
         self.validate_mcp_tooling().await?;
         self.validate_preamble().await?;
@@ -290,11 +301,14 @@ impl<M: CompletionModel> Agent<M> {
             .pop()
             .expect("cannot send completion with no messages");
 
-        let resp = self.completion_agent
+        let resp = self
+            .completion_agent
             .completion(prompt.clone(), messages.clone())
-            .await.map_err(Error::CompletionError)?
+            .await
+            .map_err(Error::CompletionError)?
             .send()
-            .await.map_err(Error::CompletionError)?;
+            .await
+            .map_err(Error::CompletionError)?;
 
         messages.push(prompt);
         messages.push(Message::Assistant {
@@ -314,7 +328,8 @@ impl<M: CompletionModel> Agent<M> {
                 AssistantContent::ToolCall(tool_call) => {
                     tools_used = tools_used + 1;
 
-                    let output = self.completion_agent
+                    let output = self
+                        .completion_agent
                         .tools
                         .call(
                             &tool_call.function.name,
@@ -324,27 +339,31 @@ impl<M: CompletionModel> Agent<M> {
                         .map_err(Error::ToolsetError)?;
 
                     if let Some(claim_manager) = &self.claim_manager {
-                        claim_manager.claim_tool_call(tool_call.function.name.clone()).await?;
+                        claim_manager
+                            .claim_tool_call(tool_call.function.name.clone())
+                            .await?;
                     }
 
-                    telemetry_targets.extend(Self::find_telemetry_targets(&tool_call.function.name, &output));
+                    telemetry_targets.extend(Self::find_telemetry_targets(
+                        &tool_call.function.name,
+                        &output,
+                    ));
 
-                    messages.push(
-                        if let Some(call_id) = tool_call.call_id {
-                            UserContent::tool_result_with_call_id(
-                                tool_call.id.clone(),
-                                call_id,
-                                OneOrMany::one(output.into()),
-                            ).into()
-                        }
-                        else {
-                            UserContent::tool_result(
-                                tool_call.id.clone(),
-                                OneOrMany::one(output.into()),
-                            ).into()
-                        }
-                    )
-                },
+                    messages.push(if let Some(call_id) = tool_call.call_id {
+                        UserContent::tool_result_with_call_id(
+                            tool_call.id.clone(),
+                            call_id,
+                            OneOrMany::one(output.into()),
+                        )
+                        .into()
+                    } else {
+                        UserContent::tool_result(
+                            tool_call.id.clone(),
+                            OneOrMany::one(output.into()),
+                        )
+                        .into()
+                    })
+                }
                 AssistantContent::Text(text) => {
                     texts.push(text.text.clone());
                 }
@@ -353,14 +372,14 @@ impl<M: CompletionModel> Agent<M> {
         }
 
         if !telemetry_targets.is_empty() && !matches!(self.telemetry, TelemetryMode::None) {
-            self.send_telemetry(telemetry_targets, messages.clone()).await;
+            self.send_telemetry(telemetry_targets, messages.clone())
+                .await;
         }
 
         if let Some(claim_manager) = &self.claim_manager {
             if tools_used == 0 {
                 claim_manager.claim_iteration().await?;
-            }
-            else {
+            } else {
                 claim_manager.claim_tool_iteration().await?;
             }
         }
