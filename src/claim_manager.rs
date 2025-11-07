@@ -1,10 +1,12 @@
+use crate::api::generated::Client;
+use crate::api::generated::types::{
+    AgentClaimAmount as ClaimAmount, AgentClaimAmount, AgentPaymentClaimRequest, McpToolName,
+};
+use crate::error::Error;
+use rig::completion::Usage;
 use std::collections::HashMap;
 use std::ops::{Div, Mul};
-use rig::completion::Usage;
 use tracing::{info, warn};
-use crate::api::generated::Client;
-use crate::api::generated::types::{McpToolName, AgentClaimAmount as ClaimAmount, AgentPaymentClaimRequest, AgentClaimAmount};
-use crate::error::Error;
 
 const MICRO_CORAL_TO_CORAL: f64 = 1_000_000.0;
 
@@ -109,10 +111,8 @@ impl ClaimManager {
             base_iteration_cost: ClaimAmount::MicroCoral(0),
             base_tool_iteration_cost: ClaimAmount::MicroCoral(0),
             exit_on_budget_exhausted: true,
-            api_url: std::env::var("CORAL_API_URL")
-                .expect("CORAL_API_URL not set"),
-            remote_session_id: std::env::var("CORAL_SESSION_ID")
-                .expect("CORAL_SESSION_ID not set")
+            api_url: std::env::var("CORAL_API_URL").expect("CORAL_API_URL not set"),
+            remote_session_id: std::env::var("CORAL_SESSION_ID").expect("CORAL_SESSION_ID not set"),
         }
     }
 
@@ -178,7 +178,6 @@ impl ClaimManager {
         self
     }
 
-
     ///
     /// Adds a new custom tool cost by name
     pub fn custom_tool_cost(mut self, tool_name: impl Into<String>, cost: ClaimAmount) -> Self {
@@ -198,7 +197,7 @@ impl ClaimManager {
     pub(crate) async fn claim_tokens(&self, usage: &Usage) -> Result<(), Error> {
         if self.input_token_cost.is_zero() && self.output_token_cost.is_zero() {
             info!("not claiming tokens because input_token_cost and output_token_cost are zero");
-            return Ok(())
+            return Ok(());
         }
 
         if usage.input_tokens + usage.output_tokens != usage.total_tokens {
@@ -207,21 +206,34 @@ impl ClaimManager {
             // case the output token price will be used.  If the claim manager has a cost specified
             // for input tokens, a warning should be generated
             if !self.input_token_cost.is_zero() {
-                warn!("provider only reported total token usage, input_token_cost will be ignored!  token cost will be claimed used output_token_cost")
+                warn!(
+                    "provider only reported total token usage, input_token_cost will be ignored!  token cost will be claimed used output_token_cost"
+                )
             }
 
-            info!("claiming {} for {} tokens", self.output_token_cost, usage.total_tokens);
-            return self.claim(self.output_token_cost.clone().mul(usage.total_tokens)).await
-        }
-        else if usage.total_tokens == 0 {
+            info!(
+                "claiming {} for {} tokens",
+                self.output_token_cost, usage.total_tokens
+            );
+            return self
+                .claim(self.output_token_cost.clone().mul(usage.total_tokens))
+                .await;
+        } else if usage.total_tokens == 0 {
             warn!("provider reported zero tokens!");
-        }
-        else {
-            info!("claiming {} for {} input tokens", self.input_token_cost, usage.input_tokens);
-            self.claim(self.input_token_cost.clone().mul(usage.input_tokens)).await?;
+        } else {
+            info!(
+                "claiming {} for {} input tokens",
+                self.input_token_cost, usage.input_tokens
+            );
+            self.claim(self.input_token_cost.clone().mul(usage.input_tokens))
+                .await?;
 
-            info!("claiming {} for {} output tokens", self.output_token_cost, usage.output_tokens);
-            self.claim(self.output_token_cost.clone().mul(usage.output_tokens)).await?;
+            info!(
+                "claiming {} for {} output tokens",
+                self.output_token_cost, usage.output_tokens
+            );
+            self.claim(self.output_token_cost.clone().mul(usage.output_tokens))
+                .await?;
         }
 
         Ok(())
@@ -229,12 +241,14 @@ impl ClaimManager {
 
     ///
     /// Claim for one prompt iteration
-    pub(crate) async fn claim_iteration(&self) -> Result<(), Error>  {
+    pub(crate) async fn claim_iteration(&self) -> Result<(), Error> {
         if !self.base_iteration_cost.is_zero() {
-            info!("claiming {} for one prompt iteration", self.base_iteration_cost);
+            info!(
+                "claiming {} for one prompt iteration",
+                self.base_iteration_cost
+            );
             self.claim(self.base_iteration_cost.clone()).await
-        }
-        else {
+        } else {
             info!("not claiming prompt iteration because base_iteration_cost is zero");
             Ok(())
         }
@@ -244,10 +258,12 @@ impl ClaimManager {
     /// Claim for one tool iteration
     pub(crate) async fn claim_tool_iteration(&self) -> Result<(), Error> {
         if !self.base_tool_iteration_cost.is_zero() {
-            info!("claiming {} for one tool iteration", self.base_tool_iteration_cost);
+            info!(
+                "claiming {} for one tool iteration",
+                self.base_tool_iteration_cost
+            );
             self.claim(self.base_tool_iteration_cost.clone()).await
-        }
-        else {
+        } else {
             info!("not claiming tool iteration because base_tool_iteration_cost is zero");
             Ok(())
         }
@@ -255,11 +271,14 @@ impl ClaimManager {
 
     ///
     /// Claim for one tool call
-    pub(crate) async fn claim_tool_call(&self, tool_name: impl Into<String>) -> Result<(), Error>  {
+    pub(crate) async fn claim_tool_call(&self, tool_name: impl Into<String>) -> Result<(), Error> {
         let name = tool_name.into();
         if !self.base_tool_call_cost.is_zero() {
             self.claim(self.base_tool_call_cost.clone()).await?;
-            info!("claiming {} as a base cost for tool '{name}'", self.base_tool_call_cost);
+            info!(
+                "claiming {} as a base cost for tool '{name}'",
+                self.base_tool_call_cost
+            );
         }
 
         if let Some(cost) = self.custom_tool_cost.get(name.as_str()) {
@@ -278,18 +297,19 @@ impl ClaimManager {
         // CORAL_SEND_CLAIMS must be '1' to send claims to the server, if this is not set, it
         // indicates the agent is running in local mode
         if std::env::var("CORAL_SEND_CLAIMS") != Ok("1".to_string()) {
-            return Ok(())
+            return Ok(());
         }
 
         if amount.is_zero() {
             // Don't spam the server with zero claims
-            return Ok(())
+            return Ok(());
         }
 
         let budget = Client::new(self.api_url.as_str())
-            .claim_payment(self.remote_session_id.as_str(), &AgentPaymentClaimRequest {
-                amount,
-            })
+            .claim_payment(
+                self.remote_session_id.as_str(),
+                &AgentPaymentClaimRequest { amount },
+            )
             .await
             .map_err(Error::ApiError)?
             .into_inner();
@@ -302,11 +322,13 @@ impl ClaimManager {
             let min_micro = match self.min_budget {
                 AgentClaimAmount::Coral(coral) => (coral * MICRO_CORAL_TO_CORAL) as i64,
                 AgentClaimAmount::MicroCoral(micro) => micro,
-                AgentClaimAmount::Usd(usd) => ((usd / budget.coral_usd_price) * MICRO_CORAL_TO_CORAL) as i64
+                AgentClaimAmount::Usd(usd) => {
+                    ((usd / budget.coral_usd_price) * MICRO_CORAL_TO_CORAL) as i64
+                }
             };
 
             if budget.remaining_budget <= min_micro {
-                return Err(Error::BudgetExhausted)
+                return Err(Error::BudgetExhausted);
             }
         }
 

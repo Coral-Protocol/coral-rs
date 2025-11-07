@@ -1,7 +1,7 @@
-use rmcp::model::ResourceContents;
 use crate::api::generated::types::McpResources;
 use crate::error::Error;
 use crate::mcp_server::McpServerConnection;
+use rmcp::model::ResourceContents;
 
 ///
 /// A CompletionEvaluatedPrompt is made up of many [`PromptPart`] parts that will be evaluated by
@@ -38,14 +38,12 @@ pub enum PromptPart {
 
     ///
     /// All resources on a specific MCP server
-    AllResources(McpServerConnection)
+    AllResources(McpServerConnection),
 }
 
 impl CompletionEvaluatedPrompt {
     pub fn new() -> Self {
-        Self {
-            parts: Vec::new(),
-        }
+        Self { parts: Vec::new() }
     }
 
     ///
@@ -91,28 +89,23 @@ impl CompletionEvaluatedPrompt {
     /// Adds a special part indicating that all resources from an MCP connection should be added to
     /// a prompt.  Note that the list of resources is calculated when
     /// [`CompletionEvaluatedPrompt::evaluate`] is called and not when this function is called.
-    pub fn all_resources(
-        mut self,
-        mcp_server_connection: McpServerConnection,
-    ) -> Self {
-        self.parts.push(PromptPart::AllResources(mcp_server_connection));
+    pub fn all_resources(mut self, mcp_server_connection: McpServerConnection) -> Self {
+        self.parts
+            .push(PromptPart::AllResources(mcp_server_connection));
         self
     }
-
 
     ///
     /// Helper function to convert a list of resource contents into a newline-separated string
     fn resource_contents_to_string(resource_contents: Vec<ResourceContents>) -> String {
-        resource_contents.iter()
+        resource_contents
+            .iter()
             .map(|x| {
                 match x {
-                    ResourceContents::TextResourceContents {
-                        text, ..
-                    } => text,
-                    ResourceContents::BlobResourceContents {
-                        blob, ..
-                    } => blob,
-                }.clone()
+                    ResourceContents::TextResourceContents { text, .. } => text,
+                    ResourceContents::BlobResourceContents { blob, .. } => blob,
+                }
+                .clone()
             })
             .collect::<Vec<_>>()
             .join("\n")
@@ -129,20 +122,23 @@ impl CompletionEvaluatedPrompt {
     pub async fn evaluate(&self) -> Result<String, Error> {
         let mut buffer = String::new();
         for part in &self.parts {
-            buffer.push_str(match part {
-                PromptPart::String(string) => string.clone(),
-                PromptPart::Resource(resource_data) => {
-                    Self::resource_contents_to_string(resource_data
-                        .mcp_server_connection
-                        .read_resource(&resource_data.resource_uri)
-                        .await?)
+            buffer.push_str(
+                match part {
+                    PromptPart::String(string) => string.clone(),
+                    PromptPart::Resource(resource_data) => Self::resource_contents_to_string(
+                        resource_data
+                            .mcp_server_connection
+                            .read_resource(&resource_data.resource_uri)
+                            .await?,
+                    ),
+                    PromptPart::AllResources(mcp_server_connection) => {
+                        Self::resource_contents_to_string(
+                            mcp_server_connection.get_resources().await?,
+                        )
+                    }
                 }
-                PromptPart::AllResources(mcp_server_connection) => {
-                    Self::resource_contents_to_string(
-                        mcp_server_connection.get_resources().await?
-                    )
-                }
-            }.as_str());
+                .as_str(),
+            );
             buffer.push('\n');
         }
 
