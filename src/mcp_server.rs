@@ -56,12 +56,12 @@ impl McpConnectionBuilder {
     /// Creates a new MCP connection builder using a child process (stdio transport)
     pub fn stdio(
         executable: impl Into<String>,
-        arguments: Vec<&str>,
+        arguments: impl IntoIterator<Item = impl Into<String>>,
         identifier: impl Into<String>,
     ) -> Self {
         Self::new(McpTransport::Stdio(StdioTransport {
             executable: executable.into(),
-            arguments: arguments.iter().map(|x| x.to_string()).collect(),
+            arguments: arguments.into_iter().map(|a| a.into()).collect(),
             identifier: identifier.into(),
         }))
     }
