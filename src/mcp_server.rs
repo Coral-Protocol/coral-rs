@@ -1,12 +1,14 @@
+use crate::completion_evaluated_prompt::CompletionEvaluatedPrompt;
 use crate::error::Error;
 use rig::tool::rmcp::McpTool;
-use rmcp::model::{ClientInfo, Implementation, ProtocolVersion, ReadResourceRequestParam, ResourceContents};
+use rmcp::model::{
+    ClientInfo, Implementation, ProtocolVersion, ReadResourceRequestParam, ResourceContents,
+};
 use rmcp::service::RunningService;
 use rmcp::transport::{ConfigureCommandExt, SseClientTransport, TokioChildProcess};
 use rmcp::{RoleClient, ServiceExt};
 use std::sync::Arc;
 use tokio::process::Command;
-use crate::completion_evaluated_prompt::CompletionEvaluatedPrompt;
 
 pub struct McpConnectionBuilder {
     client_info: ClientInfo,
@@ -36,7 +38,7 @@ impl McpConnectionBuilder {
             client_info: ClientInfo {
                 protocol_version: Default::default(),
                 capabilities: Default::default(),
-                client_info: Implementation::from_build_env()
+                client_info: Implementation::from_build_env(),
             },
             transport,
             revalidate_tooling: false,
@@ -47,9 +49,7 @@ impl McpConnectionBuilder {
     ///
     /// Creates a new MCP connection builder using an SSE transport
     pub fn sse(url: impl Into<String>) -> Self {
-        Self::new(McpTransport::Sse(SseTransport {
-            url: url.into(),
-        }))
+        Self::new(McpTransport::Sse(SseTransport { url: url.into() }))
     }
 
     ///
@@ -57,7 +57,7 @@ impl McpConnectionBuilder {
     pub fn stdio(
         executable: impl Into<String>,
         arguments: Vec<&str>,
-        identifier: impl Into<String>
+        identifier: impl Into<String>,
     ) -> Self {
         Self::new(McpTransport::Stdio(StdioTransport {
             executable: executable.into(),
@@ -72,8 +72,7 @@ impl McpConnectionBuilder {
     /// server and is required for this function to work.  If CORAL_CONNECTION_URL is not set, this
     /// function will panic.
     pub fn from_coral_env() -> Self {
-        Self::sse(std::env::var("CORAL_CONNECTION_URL")
-            .expect("CORAL_CONNECTION_URL not set"))
+        Self::sse(std::env::var("CORAL_CONNECTION_URL").expect("CORAL_CONNECTION_URL not set"))
             .protocol_version(ProtocolVersion::V_2024_11_05)
     }
 
@@ -127,10 +126,12 @@ impl McpConnectionBuilder {
     pub async fn connect(self) -> Result<McpServerConnection, Error> {
         match self.transport {
             McpTransport::Sse(sse) => {
-                let transport = SseClientTransport::start(sse.url.clone()).await
+                let transport = SseClientTransport::start(sse.url.clone())
+                    .await
                     .map_err(Error::McpSseError)?;
 
-                let transport = self.client_info
+                let transport = self
+                    .client_info
                     .serve(transport)
                     .await
                     .map_err(Error::McpClientError)?;
@@ -139,18 +140,19 @@ impl McpConnectionBuilder {
                     transport,
                     self.revalidate_tooling,
                     self.skip_tooling,
-                    sse.url.clone()
-                ).into())
+                    sse.url.clone(),
+                )
+                .into())
             }
             McpTransport::Stdio(stdio) => {
                 let cmd = Command::new(stdio.executable).configure(|c| {
                     c.args(&stdio.arguments);
                 });
 
-                let transport = TokioChildProcess::new(cmd)
-                    .map_err(Error::McpStdioError)?;
+                let transport = TokioChildProcess::new(cmd).map_err(Error::McpStdioError)?;
 
-                let transport = self.client_info
+                let transport = self
+                    .client_info
                     .serve(transport)
                     .await
                     .map_err(Error::McpClientError)?;
@@ -159,8 +161,9 @@ impl McpConnectionBuilder {
                     transport,
                     self.revalidate_tooling,
                     self.skip_tooling,
-                    stdio.identifier
-                ).into())
+                    stdio.identifier,
+                )
+                .into())
             }
         }
     }
@@ -187,7 +190,7 @@ impl McpServerConnection {
             running_service: Arc::new(running_service),
             revalidate_tooling,
             skip_tooling,
-            identifier
+            identifier,
         }
     }
 
@@ -196,8 +199,11 @@ impl McpServerConnection {
     /// as the connection does.  The MCP connection wrapped in this struct therefore remains alive
     /// for as long as tooling returned by this function does.
     pub(crate) async fn get_tools(&self) -> Result<Vec<McpTool>, Error> {
-        Ok(self.running_service.list_all_tools()
-            .await.map_err(Error::McpServiceError)?
+        Ok(self
+            .running_service
+            .list_all_tools()
+            .await
+            .map_err(Error::McpServiceError)?
             .into_iter()
             .map(|x| McpTool::from_mcp_server(x, self.running_service.peer().clone()))
             .collect())
@@ -206,14 +212,22 @@ impl McpServerConnection {
     ///
     /// Returns a list of resolved resources from this MCP server
     pub(crate) async fn get_resources(&self) -> Result<Vec<ResourceContents>, Error> {
-        let resource_list = self.running_service.list_all_resources().await
+        let resource_list = self
+            .running_service
+            .list_all_resources()
+            .await
             .map_err(Error::McpServiceError)?;
 
         let mut resource_content_list = Vec::new();
         for resource in resource_list {
-            let contents = self.running_service.read_resource(ReadResourceRequestParam {
-                uri: resource.uri.clone(),
-            }).await.map_err(Error::McpServiceError)?.contents;
+            let contents = self
+                .running_service
+                .read_resource(ReadResourceRequestParam {
+                    uri: resource.uri.clone(),
+                })
+                .await
+                .map_err(Error::McpServiceError)?
+                .contents;
 
             resource_content_list.extend(contents);
         }
@@ -223,29 +237,36 @@ impl McpServerConnection {
 
     ///
     /// Reads a single URI-referenced resource from this connection
-    pub(crate) async fn read_resource(&self, uri: impl Into<String>) -> Result<Vec<ResourceContents>, Error> {
-        Ok(self.running_service.read_resource(ReadResourceRequestParam {
-            uri: uri.into(),
-        }).await.map_err(Error::McpServiceError)?.contents)
+    pub(crate) async fn read_resource(
+        &self,
+        uri: impl Into<String>,
+    ) -> Result<Vec<ResourceContents>, Error> {
+        Ok(self
+            .running_service
+            .read_resource(ReadResourceRequestParam { uri: uri.into() })
+            .await
+            .map_err(Error::McpServiceError)?
+            .contents)
     }
 
     ///
     /// Quick helper function to create a [`CompletionEvaluatedPrompt`] from this MCP connection,
     /// this will include an [`CompletionEvaluatedPrompt::all_resources`] call from this MCP
     /// connection, which is recommended for Coral MCP connections.
-    /// 
+    ///
     /// This prompt will start with a passed in string
-    pub fn prompt_with_resources_str(&self, prompt: impl Into<String>) -> CompletionEvaluatedPrompt {
-        CompletionEvaluatedPrompt::from_string(prompt)
-            .all_resources(self.clone())
+    pub fn prompt_with_resources_str(
+        &self,
+        prompt: impl Into<String>,
+    ) -> CompletionEvaluatedPrompt {
+        CompletionEvaluatedPrompt::from_string(prompt).all_resources(self.clone())
     }
 
     ///
-    /// Helper function to create an empty [`CompletionEvaluatedPrompt`] prompt that contains 
-    /// nothing but all the resources provided by this MCP server.  This function is useful when 
+    /// Helper function to create an empty [`CompletionEvaluatedPrompt`] prompt that contains
+    /// nothing but all the resources provided by this MCP server.  This function is useful when
     /// making a very basic agent that only Coral resources as the preamble.  
     pub fn prompt_with_resources(&self) -> CompletionEvaluatedPrompt {
-        CompletionEvaluatedPrompt::new()
-            .all_resources(self.clone())
+        CompletionEvaluatedPrompt::new().all_resources(self.clone())
     }
 }

@@ -1,10 +1,10 @@
+use crate::api::generated::types::RouteException;
+use progenitor::progenitor_client::Error as ProgenitorError;
 use rig::tool::ToolSetError;
+use rmcp::ServiceError;
 use rmcp::service::ClientInitializeError;
 use rmcp::transport::sse_client::SseTransportError;
-use rmcp::ServiceError;
 use thiserror::Error;
-use crate::api::generated::types::RouteException;
-use progenitor::progenitor_client::{Error as ProgenitorError};
 
 #[derive(Debug, Error)]
 pub enum Error {
@@ -16,7 +16,7 @@ pub enum Error {
 
     #[error("mcp error: {0}")]
     McpStdioError(std::io::Error),
-    
+
     #[error("mcp error: {0}")]
     McpServiceError(ServiceError),
 
