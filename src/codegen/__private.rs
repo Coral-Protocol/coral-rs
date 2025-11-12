@@ -177,14 +177,6 @@ impl FromBytes for String {
     }
 }
 
-impl FromBytes for bool {
-    fn from_bytes(mut x: Vec<u8>) -> Result<Self, FromBytesError> {
-        x.pop()
-            .ok_or(FromBytesError::UnexpectedData("file is empty".to_string()))
-            .map(|x| x != 0)
-    }
-}
-
 impl FromBytes for Blob {
     fn from_bytes(x: Vec<u8>) -> Result<Self, FromBytesError> {
         Ok(Blob { data: x })

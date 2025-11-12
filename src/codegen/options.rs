@@ -204,6 +204,23 @@ pub fn generate_option_structure(file: impl Into<PathBuf>) -> String {
 
         let fn_name = if x.r#type.starts_with("Vec") {
             format_ident!("get_options")
+        } else if x.r#type.eq("bool") {
+
+            // bool is a special type where the actual type is u8, '1' being the value for true and
+            // '0' being the value for false.  Unfortunately, FromStr bool does not take '1' and '0'
+            return if x.optional {
+                quote! {
+                    #field_name: match ::coral_rs::codegen::__private::get_option::<u8>(#name, #fs) {
+                        Ok(x) => Some(x != 0),
+                        Err(::coral_rs::codegen::__private::Error::MissingOption(_)) => None,
+                        Err(e) => return Err(e)
+                    },
+                }
+            } else {
+                quote! {
+                    #field_name: ::coral_rs::codegen::__private::get_option::<u8>(#name, #fs)? != 0,
+                }
+            }
         } else {
             format_ident!("get_option")
         };
