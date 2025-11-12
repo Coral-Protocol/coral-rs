@@ -4390,7 +4390,6 @@
                     }
                   },
                   "required": [
-                    "default",
                     "type"
                   ],
                   "title": "list[blob]"
@@ -4507,7 +4506,6 @@
                     }
                   },
                   "required": [
-                    "default",
                     "type"
                   ],
                   "title": "list[i8]"
@@ -4588,7 +4586,6 @@
                     }
                   },
                   "required": [
-                    "default",
                     "type"
                   ],
                   "title": "list[f64]"
@@ -4669,7 +4666,6 @@
                     }
                   },
                   "required": [
-                    "default",
                     "type"
                   ],
                   "title": "list[f32]"
@@ -4750,7 +4746,6 @@
                     }
                   },
                   "required": [
-                    "default",
                     "type"
                   ],
                   "title": "list[i32]"
@@ -4831,7 +4826,6 @@
                     }
                   },
                   "required": [
-                    "default",
                     "type"
                   ],
                   "title": "list[i64]"
@@ -4989,7 +4983,6 @@
                     }
                   },
                   "required": [
-                    "default",
                     "type"
                   ],
                   "title": "list[i16]"
@@ -5084,7 +5077,6 @@
                     }
                   },
                   "required": [
-                    "default",
                     "type"
                   ],
                   "title": "list[string]"
@@ -5167,7 +5159,6 @@
                     }
                   },
                   "required": [
-                    "default",
                     "type"
                   ],
                   "title": "list[u8]"
@@ -5250,7 +5241,6 @@
                     }
                   },
                   "required": [
-                    "default",
                     "type"
                   ],
                   "title": "list[u32]"
@@ -5329,7 +5319,6 @@
                     }
                   },
                   "required": [
-                    "default",
                     "type"
                   ],
                   "title": "list[u64]"
@@ -5412,7 +5401,6 @@
                     }
                   },
                   "required": [
-                    "default",
                     "type"
                   ],
                   "title": "list[u16]"
