@@ -6,7 +6,7 @@ version = "0.0.1"
 description = "This agent does not connect to the Coral server and simply prints a list of options it was given"
 
 [runtimes.executable]
-command = "debug/example-exe"
+command = "target/debug/example-options"
 
 # types:
 # i8, i16, i32, i64, u8, u16, u32, u64, f32, f64, bool, string, blob, number, secret,
