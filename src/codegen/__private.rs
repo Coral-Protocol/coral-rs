@@ -22,8 +22,8 @@ pub enum Error {
     #[error("unexpected data in file {0}: {1}")]
     UnexpectedData(String, String),
 
-    #[error("io error {0}")]
-    IO(std::io::Error),
+    #[error("io error reading {0}: {1}")]
+    IO(PathBuf, std::io::Error),
 }
 
 pub enum FromBytesError {
@@ -35,9 +35,10 @@ where
     T: FromBytes,
 {
     let filepath = filename.into();
-    let mut file = File::open(filepath.clone()).map_err(Error::IO)?;
+    let mut file = File::open(filepath.clone()).map_err(|e| Error::IO(filepath.clone(), e))?;
     let mut buffer = Vec::new();
-    file.read_to_end(&mut buffer).map_err(Error::IO)?;
+    file.read_to_end(&mut buffer)
+        .map_err(|e| Error::IO(filepath.clone(), e))?;
 
     match T::from_bytes(buffer) {
         Ok(data) => Ok(data),
