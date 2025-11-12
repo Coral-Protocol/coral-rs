@@ -7,7 +7,7 @@ description = "A simple example agent with no collaborative ability"
 capabilities = ["resources", "tool_refreshing"]
 
 [runtimes.executable]
-command = "target/debug/example-agent"
+command = ["target/debug/example-agent"]
 
 [options]
 OPENAI_API_KEY = { type = "string" }
