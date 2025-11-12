@@ -1,2 +1,5 @@
-[registry]
-example-agent = { path = "W:/Coral/coral-rs/example-agent" }
+[[local-agent]]
+path = "example-agent"
+
+[[local-agent]]
+path = "example-options"

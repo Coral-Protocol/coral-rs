@@ -7,7 +7,7 @@ description = "A simple example agent with no collaborative ability"
 capabilities = ["resources", "tool_refreshing"]
 
 [runtimes.executable]
-command = "debug/example-agent.exe"
+command = "target/debug/example-agent"
 
 [options]
-OPENAI_API_KEY = { type = "string", description = "The OpenAI key to use for this agent" }
+OPENAI_API_KEY = { type = "string" }
