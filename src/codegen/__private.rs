@@ -75,7 +75,18 @@ where
         ','
     };
 
-    let value = std::env::var(name).map_err(|_| Error::MissingOption(name.to_string()))?;
+    let value = match std::env::var(name) {
+        // The default value for lists is an empty list, it is valid to not specify one
+        Err(_) => return Ok(vec![]),
+        Ok(value) => {
+            if value.is_empty() {
+                return Ok(vec![]);
+            } else {
+                value
+            }
+        }
+    };
+
     if fs {
         value.split(separator).map(|x| read_from_fs(x)).collect()
     } else {
