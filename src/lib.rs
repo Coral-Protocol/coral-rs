@@ -7,6 +7,7 @@ pub mod error;
 pub mod mcp_server;
 pub mod repeating_prompt_stream;
 pub mod telemetry;
+pub mod codegen;
 
 pub use rig;
 pub use rmcp;

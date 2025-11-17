@@ -1,0 +1,8 @@
+[package]
+name = "example-options-request"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+coral-rs = { path = "../.." }
+tokio = { version = "1.48.0", features = ["rt-multi-thread"] }

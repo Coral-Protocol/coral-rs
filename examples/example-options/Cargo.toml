@@ -1,0 +1,10 @@
+[package]
+name = "example-options"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+coral-rs = { path = "../.." }
+
+[build-dependencies]
+coral-rs = { path = "../.." }

@@ -26,6 +26,12 @@ thiserror = "2.0.12"
 progenitor = "0.11.0"
 progenitor-client = "0.11.0"
 futures = "0.3.31"
+toml = "0.9.8"
+quote = "1.0.42"
+syn = "2.0.110"
+prettyplease = "0.2.37"
+byteorder = "1.5.0 "
+base64 = "0.22.1"
 
 [build-dependencies]
 serde_json = "1.0.143"
