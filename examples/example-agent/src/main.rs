@@ -9,7 +9,6 @@ use coral_rs::rig::client::CompletionClient;
 use coral_rs::rig::client::ProviderClient;
 use coral_rs::rig::providers::openai;
 use coral_rs::rig::providers::openai::GPT_4_1_MINI;
-use coral_rs::telemetry::TelemetryMode;
 use std::time::Duration;
 
 #[tokio::main]
@@ -44,7 +43,6 @@ async fn main() {
         .custom_tool_cost("coral_send_message", AgentClaimAmount::Usd(100.0));
 
     let agent = Agent::new(completion_agent)
-        .telemetry(TelemetryMode::OpenAI, model)
         .claim_manager(claim_manager)
         .mcp_server(coral_mcp.clone());
 

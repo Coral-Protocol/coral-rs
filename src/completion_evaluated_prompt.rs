@@ -1,4 +1,4 @@
-use crate::api::generated::types::McpResources;
+use crate::api::generated::types::McpResourceName;
 use crate::error::Error;
 use crate::mcp_server::McpServerConnection;
 use rmcp::model::ResourceContents;
@@ -80,7 +80,7 @@ impl CompletionEvaluatedPrompt {
     pub fn coral_resource(
         self,
         mcp_server_connection: McpServerConnection,
-        resource: McpResources,
+        resource: McpResourceName,
     ) -> Self {
         self.resource(mcp_server_connection, resource.to_string())
     }

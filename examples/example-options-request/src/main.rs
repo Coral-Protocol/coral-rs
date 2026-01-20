@@ -1,6 +1,6 @@
 use coral_rs::api::generated::types::{
-    AgentGraphRequest, AgentOptionValue, AgentRegistryIdentifier, GraphAgentProvider,
-    GraphAgentRequest, RuntimeId, SessionRequest,
+    AgentGraphRequest, AgentOptionValue, AgentRegistrySourceIdentifier, GraphAgentProvider,
+    GraphAgentRequest, RegistryAgentIdentifier, RuntimeId, SessionRequest,
 };
 use coral_rs::api::generated::{Client, Error};
 use std::collections::HashMap;
@@ -9,11 +9,11 @@ use std::collections::HashMap;
 async fn main() {
     let agent = GraphAgentRequest {
         blocking: None,
-        coral_plugins: vec![],
-        custom_tool_access: vec![],
+        custom_tool_access: None,
         description: None,
-        id: AgentRegistryIdentifier {
+        id: RegistryAgentIdentifier {
             name: "example-options".to_string(),
+            registry_source_id: AgentRegistrySourceIdentifier::Local,
             version: "0.0.1".to_string(),
         },
         name: "example-options".to_string(),
@@ -132,23 +132,26 @@ async fn main() {
                 ]),
             ),
         ]),
+        plugins: None,
         provider: GraphAgentProvider::Local {
             runtime: RuntimeId::Executable,
         },
         system_prompt: None,
+        x402_budgets: vec![],
     };
 
     match Client::new("http://localhost:5555")
-        .create_session(&SessionRequest {
-            agent_graph_request: AgentGraphRequest {
-                agents: vec![agent],
-                custom_tools: Default::default(),
-                groups: vec![vec!["example-options".to_string()]],
+        .create_session(
+            "default",
+            &SessionRequest {
+                agent_graph_request: AgentGraphRequest {
+                    agents: vec![agent],
+                    custom_tools: Default::default(),
+                    groups: Some(vec![vec!["example-options".to_string()]]),
+                },
+                session_runtime_settings: None,
             },
-            application_id: "".to_string(),
-            privacy_key: "".to_string(),
-            session_id: None,
-        })
+        )
         .await
     {
         Ok(a) => println!("session id: {}", a.session_id),

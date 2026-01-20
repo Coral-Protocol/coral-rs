@@ -306,7 +306,7 @@ impl ClaimManager {
         }
 
         let budget = Client::new(self.api_url.as_str())
-            .claim_payment(
+            .submit_rental_claim(
                 self.remote_session_id.as_str(),
                 &AgentPaymentClaimRequest { amount },
             )

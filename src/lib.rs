@@ -2,12 +2,11 @@ pub mod agent;
 pub mod agent_loop;
 pub mod api;
 pub mod claim_manager;
+pub mod codegen;
 pub mod completion_evaluated_prompt;
 pub mod error;
 pub mod mcp_server;
 pub mod repeating_prompt_stream;
-pub mod telemetry;
-pub mod codegen;
 
 pub use rig;
 pub use rmcp;
