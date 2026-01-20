@@ -1,10 +1,12 @@
 use crate::completion_evaluated_prompt::CompletionEvaluatedPrompt;
 use crate::error::Error;
+use reqwest::header::HeaderMap;
 use rig::tool::rmcp::McpTool;
 use rmcp::model::{
     ClientInfo, Implementation, ProtocolVersion, ReadResourceRequestParam, ResourceContents,
 };
 use rmcp::service::RunningService;
+use rmcp::transport::sse_client::SseClientConfig;
 use rmcp::transport::{ConfigureCommandExt, SseClientTransport, TokioChildProcess};
 use rmcp::{RoleClient, ServiceExt};
 use std::sync::Arc;
@@ -19,6 +21,7 @@ pub struct McpConnectionBuilder {
 
 struct SseTransport {
     url: String,
+    headers: HeaderMap,
 }
 
 struct StdioTransport {
@@ -49,7 +52,20 @@ impl McpConnectionBuilder {
     ///
     /// Creates a new MCP connection builder using an SSE transport
     pub fn sse(url: impl Into<String>) -> Self {
-        Self::new(McpTransport::Sse(SseTransport { url: url.into() }))
+        Self::new(McpTransport::Sse(SseTransport {
+            url: url.into(),
+            headers: Default::default(),
+        }))
+    }
+
+    ///
+    /// Creates a new MCP connection builder using an SSE transport, allowing headers to be passed
+    /// (usually used for authorization)
+    pub fn sse_with_headers(url: impl Into<String>, headers: impl Into<HeaderMap>) -> Self {
+        Self::new(McpTransport::Sse(SseTransport {
+            url: url.into(),
+            headers: headers.into(),
+        }))
     }
 
     ///
@@ -126,9 +142,18 @@ impl McpConnectionBuilder {
     pub async fn connect(self) -> Result<McpServerConnection, Error> {
         match self.transport {
             McpTransport::Sse(sse) => {
-                let transport = SseClientTransport::start(sse.url.clone())
-                    .await
-                    .map_err(Error::McpSseError)?;
+                let transport = SseClientTransport::start_with_client(
+                    reqwest::ClientBuilder::new()
+                        .default_headers(sse.headers.clone())
+                        .build()
+                        .map_err(|e| Error::McpSseError(e.into()))?,
+                    SseClientConfig {
+                        sse_endpoint: sse.url.clone().into(),
+                        ..Default::default()
+                    },
+                )
+                .await
+                .map_err(Error::McpSseError)?;
 
                 let transport = self
                     .client_info
