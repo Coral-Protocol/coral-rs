@@ -18,12 +18,12 @@ use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::{SubscriberInitExt, TryInitError};
 
 ///
-/// Helper function that omits verbose logging information when CORAL_ORCHESTRATION_RUNTIME is set.
+/// Helper function that omits verbose logging information when CORAL_RUNTIME_ID is set.
 /// This is useful for developing Coral agents because during dev-mode development, extra logging
 /// information is desired, but when the agents are being orchestrated (during application
 /// development), the extra information is duplicated with the server's logging information
 pub fn init_tracing() -> Result<(), TryInitError> {
-    if std::env::var("CORAL_ORCHESTRATION_RUNTIME").is_ok() {
+    if std::env::var("CORAL_RUNTIME_ID").is_ok() {
         let stderr = tracing_subscriber::fmt::layer()
             .with_target(false)
             .with_level(false)
