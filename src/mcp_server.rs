@@ -3,7 +3,7 @@ use crate::error::Error;
 use reqwest::header::HeaderMap;
 use rig::tool::rmcp::McpTool;
 use rmcp::model::{
-    ClientInfo, Implementation, ProtocolVersion, ReadResourceRequestParam, ResourceContents,
+    ClientInfo, Implementation, ProtocolVersion, ReadResourceRequestParam, ResourceContents, Tool,
 };
 use rmcp::service::RunningService;
 use rmcp::transport::sse_client::SseClientConfig;
@@ -11,7 +11,7 @@ use rmcp::transport::streamable_http_client::StreamableHttpClientTransportConfig
 use rmcp::transport::{
     ConfigureCommandExt, SseClientTransport, StreamableHttpClientTransport, TokioChildProcess,
 };
-use rmcp::{RoleClient, ServiceExt};
+use rmcp::{Peer, RoleClient, ServiceExt};
 use std::ffi::OsStr;
 use std::sync::Arc;
 use tokio::process::Command;
@@ -247,14 +247,14 @@ impl McpServerConnection {
     /// Returns a list of tooling that this MCP server provides.  Note that a tool must live as long
     /// as the connection does.  The MCP connection wrapped in this struct therefore remains alive
     /// for as long as tooling returned by this function does.
-    pub(crate) async fn get_tools(&self) -> Result<Vec<McpTool>, Error> {
+    pub(crate) async fn get_tools(&self) -> Result<Vec<(Tool, Peer<RoleClient>)>, Error> {
         Ok(self
             .running_service
             .list_all_tools()
             .await
             .map_err(Error::McpServiceError)?
             .into_iter()
-            .map(|x| McpTool::from_mcp_server(x, self.running_service.peer().clone()))
+            .map(|x| (x, self.running_service.peer().clone()))
             .collect())
     }
 

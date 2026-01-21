@@ -5,9 +5,8 @@ use crate::mcp_server::McpServerConnection;
 use rig::OneOrMany;
 use rig::completion::{AssistantContent, Completion, CompletionModel, Message};
 use rig::message::UserContent;
-use rig::tool::ToolDyn;
+use rig::tool::server::{ToolServer, ToolServerHandle};
 use std::collections::HashSet;
-use tracing::info;
 
 pub struct Agent<M: CompletionModel> {
     completion_agent: rig::agent::Agent<M>,
@@ -93,67 +92,92 @@ impl<M: CompletionModel> Agent<M> {
         self
     }
 
-    ///
-    /// This function is responsible for making sure every [`McpServerConnection`] provided to this
-    /// agent has their tools validated as requested by the connection for a completion request.
-    ///
-    /// A single [`McpServerConnection`] may choose:
-    /// - To have tooling skipped
-    /// - To have tooling evaluated once
-    /// - To have tooling evaluated before every completion
-    async fn validate_mcp_tooling(&mut self) -> Result<(), Error> {
-        // Remove any tooling that revalidates
-        self.revalidating_tooling.retain(|mcp_tool_name| {
-            self.completion_agent
-                .static_tools
-                .retain(|tool_name| tool_name != mcp_tool_name);
-            self.completion_agent.tools.delete_tool(mcp_tool_name);
-            false
-        });
+    // ///
+    // /// This function is responsible for making sure every [`McpServerConnection`] provided to this
+    // /// agent has their tools validated as requested by the connection for a completion request.
+    // ///
+    // /// A single [`McpServerConnection`] may choose:
+    // /// - To have tooling skipped
+    // /// - To have tooling evaluated once
+    // /// - To have tooling evaluated before every completion
+    // async fn validate_mcp_tooling(&mut self) -> Result<ToolServerHandle, Error> {
+    //     let mut tool_server = ToolServer::new();
+    //
+    //     for mcp in self.mcp_connections.iter_mut() {
+    //         let tools = mcp.connection.get_tools().await?;
+    //         for (tool, peer) in tools.iter() {
+    //             tool_server = tool_server.rmcp_tool(tool.clone(), peer.to_owned())
+    //         }
+    //     }
+    //
+    //     // // Remove any tooling that revalidates
+    //     // self.revalidating_tooling.retain(|mcp_tool_name| {
+    //     //     // self.completion_agent
+    //     //     //     .tools
+    //     //     //     .retain(|tool_name| tool_name != mcp_tool_name);
+    //     //     // self.completion_agent.tools.delete_tool(mcp_tool_name);
+    //     //     false
+    //     // });
+    //     //
+    //     // let mut tools = Vec::new();
+    //     // for mcp in self.mcp_connections.iter_mut() {
+    //     //     if (mcp.tools_validated && !mcp.connection.revalidate_tooling)
+    //     //         || mcp.connection.skip_tooling
+    //     //     {
+    //     //         continue;
+    //     //     }
+    //     //
+    //     //     let mcp_tools = mcp.connection.get_tools().await?;
+    //     //     if !mcp.tools_validated {
+    //     //         for tool in mcp_tools.iter() {
+    //     //             info!(
+    //     //                 "adding tool \"{}\" from mcp server \"{}\"",
+    //     //                 tool.name(),
+    //     //                 mcp.connection.identifier
+    //     //             );
+    //     //         }
+    //     //     }
+    //     //
+    //     //     mcp.tools_validated = true;
+    //     //
+    //     //     // If this MCP connection revalidates tooling, the list of tools that are revalidated
+    //     //     // needs to be recorded so that it can be removed from the completion agent on the next
+    //     //     // time this function is called
+    //     //     if mcp.connection.revalidate_tooling {
+    //     //         self.revalidating_tooling
+    //     //             .extend(mcp_tools.iter().map(|tool| tool.name().clone()))
+    //     //     }
+    //     //
+    //     //     tools.extend(mcp_tools);
+    //     // }
+    //     //
+    //     // // Add new or revalidated tooling to the completion agent's tooling
+    //     // let agent_tools = std::mem::take(&mut self.completion_agent.tools);
+    //     // self.completion_agent
+    //     // self.completion_agent
+    //     //     .static_tools
+    //     //     .extend(tools.iter().map(|tool| tool.name().clone()));
+    //     // self.completion_agent.tools = tools.into_iter().fold(agent_tools, |mut toolset, tool| {
+    //     //     toolset.add_tool(tool);
+    //     //     toolset
+    //     // });
+    //     //
+    //     // Ok(())
+    //
+    //     Ok(ToolServer::new().run())
+    // }
 
-        let mut tools = Vec::new();
+    async fn build_tool_server(&mut self) -> Result<ToolServerHandle, Error> {
+        let mut tool_server = ToolServer::new();
+
         for mcp in self.mcp_connections.iter_mut() {
-            if (mcp.tools_validated && !mcp.connection.revalidate_tooling)
-                || mcp.connection.skip_tooling
-            {
-                continue;
+            let tools = mcp.connection.get_tools().await?;
+            for (tool, peer) in tools.iter() {
+                tool_server = tool_server.rmcp_tool(tool.clone(), peer.to_owned())
             }
-
-            let mcp_tools = mcp.connection.get_tools().await?;
-            if !mcp.tools_validated {
-                for tool in mcp_tools.iter() {
-                    info!(
-                        "adding tool \"{}\" from mcp server \"{}\"",
-                        tool.name(),
-                        mcp.connection.identifier
-                    );
-                }
-            }
-
-            mcp.tools_validated = true;
-
-            // If this MCP connection revalidates tooling, the list of tools that are revalidated
-            // needs to be recorded so that it can be removed from the completion agent on the next
-            // time this function is called
-            if mcp.connection.revalidate_tooling {
-                self.revalidating_tooling
-                    .extend(mcp_tools.iter().map(|tool| tool.name().clone()))
-            }
-
-            tools.extend(mcp_tools);
         }
 
-        // Add new or revalidated tooling to the completion agent's tooling
-        let agent_tools = std::mem::take(&mut self.completion_agent.tools);
-        self.completion_agent
-            .static_tools
-            .extend(tools.iter().map(|tool| tool.name().clone()));
-        self.completion_agent.tools = tools.into_iter().fold(agent_tools, |mut toolset, tool| {
-            toolset.add_tool(tool);
-            toolset
-        });
-
-        Ok(())
+        Ok(tool_server.run())
     }
 
     ///
@@ -168,7 +192,7 @@ impl<M: CompletionModel> Agent<M> {
     async fn validate_preamble(&mut self) -> Result<(), Error> {
         if let Some(prompt) = &self.preamble {
             match prompt.evaluate().await {
-                Ok(prompt) => self.completion_agent.preamble = prompt,
+                Ok(prompt) => self.completion_agent.preamble = Some(prompt),
                 Err(e) => return Err(e),
             }
         }
@@ -196,7 +220,7 @@ impl<M: CompletionModel> Agent<M> {
         &mut self,
         mut messages: Vec<Message>,
     ) -> Result<CompletionResult, Error> {
-        self.validate_mcp_tooling().await?;
+        let tool_server_handle = self.build_tool_server().await?;
         self.validate_preamble().await?;
 
         // Take the last message from the stack as a prompt
@@ -230,12 +254,10 @@ impl<M: CompletionModel> Agent<M> {
                 AssistantContent::ToolCall(tool_call) => {
                     tools_used = tools_used + 1;
 
-                    let output = self
-                        .completion_agent
-                        .tools
-                        .call(
+                    let output = tool_server_handle
+                        .call_tool(
                             &tool_call.function.name,
-                            tool_call.function.arguments.to_string(),
+                            &*tool_call.function.arguments.to_string(),
                         )
                         .await
                         .map_err(Error::ToolsetError)?;

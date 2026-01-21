@@ -1,6 +1,7 @@
 use crate::api::generated::types::RouteException;
 use progenitor::progenitor_client::Error as ProgenitorError;
 use rig::tool::ToolSetError;
+use rig::tool::server::ToolServerError;
 use rmcp::ServiceError;
 use rmcp::service::ClientInitializeError;
 use rmcp::transport::sse_client::SseTransportError;
@@ -27,7 +28,7 @@ pub enum Error {
     CompletionError(rig::completion::CompletionError),
 
     #[error("tool error: {0}")]
-    ToolsetError(ToolSetError),
+    ToolsetError(ToolServerError),
 
     #[error("budget exhausted")]
     BudgetExhausted,
