@@ -7,89 +7,32 @@ use rmcp::model::{
 };
 use rmcp::service::RunningService;
 use rmcp::transport::sse_client::SseClientConfig;
-use rmcp::transport::{ConfigureCommandExt, SseClientTransport, TokioChildProcess};
+use rmcp::transport::streamable_http_client::StreamableHttpClientTransportConfig;
+use rmcp::transport::{
+    ConfigureCommandExt, SseClientTransport, StreamableHttpClientTransport, TokioChildProcess,
+};
 use rmcp::{RoleClient, ServiceExt};
+use std::ffi::OsStr;
 use std::sync::Arc;
 use tokio::process::Command;
 
 pub struct McpConnectionBuilder {
     client_info: ClientInfo,
-    transport: McpTransport,
     revalidate_tooling: bool,
     skip_tooling: bool,
 }
 
-struct SseTransport {
-    url: String,
-    headers: HeaderMap,
-}
-
-struct StdioTransport {
-    executable: String,
-    arguments: Vec<String>,
-    identifier: String,
-}
-
-enum McpTransport {
-    Sse(SseTransport),
-    Stdio(StdioTransport),
-}
-
 impl McpConnectionBuilder {
-    fn new(transport: McpTransport) -> Self {
+    fn new() -> Self {
         Self {
             client_info: ClientInfo {
                 protocol_version: Default::default(),
                 capabilities: Default::default(),
                 client_info: Implementation::from_build_env(),
             },
-            transport,
             revalidate_tooling: false,
             skip_tooling: false,
         }
-    }
-
-    ///
-    /// Creates a new MCP connection builder using an SSE transport
-    pub fn sse(url: impl Into<String>) -> Self {
-        Self::new(McpTransport::Sse(SseTransport {
-            url: url.into(),
-            headers: Default::default(),
-        }))
-    }
-
-    ///
-    /// Creates a new MCP connection builder using an SSE transport, allowing headers to be passed
-    /// (usually used for authorization)
-    pub fn sse_with_headers(url: impl Into<String>, headers: impl Into<HeaderMap>) -> Self {
-        Self::new(McpTransport::Sse(SseTransport {
-            url: url.into(),
-            headers: headers.into(),
-        }))
-    }
-
-    ///
-    /// Creates a new MCP connection builder using a child process (stdio transport)
-    pub fn stdio(
-        executable: impl Into<String>,
-        arguments: impl IntoIterator<Item = impl Into<String>>,
-        identifier: impl Into<String>,
-    ) -> Self {
-        Self::new(McpTransport::Stdio(StdioTransport {
-            executable: executable.into(),
-            arguments: arguments.into_iter().map(|a| a.into()).collect(),
-            identifier: identifier.into(),
-        }))
-    }
-
-    ///
-    /// Helper function to set up a connection with the Coral MCP server.  This is designed to be
-    /// used when the agent is orchestrated with Coral.  CORAL_CONNECTION_URL is set by the Coral
-    /// server and is required for this function to work.  If CORAL_CONNECTION_URL is not set, this
-    /// function will panic.
-    pub fn from_coral_env() -> Self {
-        Self::sse(std::env::var("CORAL_CONNECTION_URL").expect("CORAL_CONNECTION_URL not set"))
-            .protocol_version(ProtocolVersion::V_2024_11_05)
     }
 
     ///
@@ -138,59 +81,140 @@ impl McpConnectionBuilder {
     }
 
     ///
-    /// Builds the connection builder into a connection to an MCP server
-    pub async fn connect(self) -> Result<McpServerConnection, Error> {
-        match self.transport {
-            McpTransport::Sse(sse) => {
-                let transport = SseClientTransport::start_with_client(
+    /// Helper function to build a connection to the Coral server.  This uses the Coral-provided
+    /// CORAL_CONNECTION_URL environment variable and therefore only works when this is set (this
+    /// is automatically set for agents launched by the Coral server).
+    pub async fn build_coral_sse() -> Result<McpServerConnection, Error> {
+        Self::new()
+            .revalidate_tooling(false)
+            .build_sse(std::env::var("CORAL_CONNECTION_URL").expect("CORAL_CONNECTION_URL not set"))
+            .await
+    }
+
+    ///
+    /// Builds a basic MCP server connection using an SSE transport to the specified [url]
+    pub async fn build_sse(self, url: impl Into<String>) -> Result<McpServerConnection, Error> {
+        self.build_sse_with_headers(url, HeaderMap::new()).await
+    }
+
+    ///
+    /// Builds a new MCP connection builder using an SSE transport, allowing headers to be passed
+    /// (usually used for authorization)
+    pub async fn build_sse_with_headers(
+        self,
+        url: impl Into<String>,
+        headers: impl Into<HeaderMap>,
+    ) -> Result<McpServerConnection, Error> {
+        let url = url.into();
+        let transport = self
+            .client_info
+            .serve(
+                SseClientTransport::start_with_client(
                     reqwest::ClientBuilder::new()
-                        .default_headers(sse.headers.clone())
+                        .default_headers(headers.into())
                         .build()
                         .map_err(|e| Error::McpSseError(e.into()))?,
                     SseClientConfig {
-                        sse_endpoint: sse.url.clone().into(),
+                        sse_endpoint: url.clone().into(),
                         ..Default::default()
                     },
                 )
                 .await
-                .map_err(Error::McpSseError)?;
+                .map_err(Error::McpSseError)?,
+            )
+            .await
+            .map_err(Error::McpClientError)?;
 
-                let transport = self
-                    .client_info
-                    .serve(transport)
-                    .await
-                    .map_err(Error::McpClientError)?;
+        Ok(McpServerConnection::new(
+            transport,
+            self.revalidate_tooling,
+            self.skip_tooling,
+            url,
+        ))
+    }
 
-                Ok(McpServerConnection::new(
-                    transport,
-                    self.revalidate_tooling,
-                    self.skip_tooling,
-                    sse.url.clone(),
-                )
-                .into())
-            }
-            McpTransport::Stdio(stdio) => {
-                let cmd = Command::new(stdio.executable).configure(|c| {
-                    c.args(&stdio.arguments);
-                });
+    ///
+    /// Builds an MCP connection from a child process' stdio stream
+    pub async fn build_stdio<I, S>(
+        self,
+        executable: impl Into<String>,
+        arguments: I,
+        identifier: impl Into<String>,
+    ) -> Result<McpServerConnection, Error>
+    where
+        I: IntoIterator<Item = S>,
+        S: AsRef<OsStr>,
+    {
+        let transport = self
+            .client_info
+            .clone()
+            .serve(
+                TokioChildProcess::new(Command::new(executable.into()).configure(|c| {
+                    c.args::<I, S>(arguments);
+                }))
+                .map_err(Error::McpStdioError)?,
+            )
+            .await
+            .map_err(Error::McpClientError)?;
 
-                let transport = TokioChildProcess::new(cmd).map_err(Error::McpStdioError)?;
+        Ok(self.build(transport, identifier))
+    }
 
-                let transport = self
-                    .client_info
-                    .serve(transport)
-                    .await
-                    .map_err(Error::McpClientError)?;
+    ///
+    /// Builds an MCP connection from a streamable HTTP URI.  Helper function for [Self::build_streamable_http_with_headers]
+    pub async fn build_streamable_http(
+        self,
+        uri: impl Into<String>,
+    ) -> Result<McpServerConnection, Error> {
+        self.build_streamable_http_with_headers(uri, HeaderMap::new())
+            .await
+    }
 
-                Ok(McpServerConnection::new(
-                    transport,
-                    self.revalidate_tooling,
-                    self.skip_tooling,
-                    stdio.identifier,
-                )
-                .into())
-            }
-        }
+    ///
+    /// Builds an MCP connection from a streamable HTTP URI.  This function allows headers to be
+    /// passed through for authorization.
+    pub async fn build_streamable_http_with_headers(
+        self,
+        uri: impl Into<String>,
+        headers: impl Into<HeaderMap>,
+    ) -> Result<McpServerConnection, Error> {
+        let uri = uri.into();
+        let transport = self
+            .client_info
+            .serve(StreamableHttpClientTransport::with_client(
+                reqwest::ClientBuilder::new()
+                    .default_headers(headers.into())
+                    .build()
+                    .map_err(|e| Error::McpSseError(e.into()))?,
+                StreamableHttpClientTransportConfig {
+                    uri: uri.clone().into(),
+                    ..Default::default()
+                },
+            ))
+            .await
+            .map_err(Error::McpClientError)?;
+
+        Ok(McpServerConnection::new(
+            transport,
+            self.revalidate_tooling,
+            self.skip_tooling,
+            uri,
+        ))
+    }
+
+    ///
+    /// Builds a [McpServerConnection] from a given [transport] and [identifier]
+    pub fn build(
+        self,
+        transport: RunningService<RoleClient, ClientInfo>,
+        identifier: impl Into<String>,
+    ) -> McpServerConnection {
+        McpServerConnection::new(
+            transport,
+            self.revalidate_tooling,
+            self.skip_tooling,
+            identifier.into(),
+        )
     }
 }
 

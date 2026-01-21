@@ -17,8 +17,7 @@ async fn main() {
 
     let model = GPT_4_1_MINI;
 
-    let coral_mcp = McpConnectionBuilder::from_coral_env()
-        .connect()
+    let coral_mcp = McpConnectionBuilder::build_coral_sse()
         .await
         .expect("Failed to connect to the Coral server");
 

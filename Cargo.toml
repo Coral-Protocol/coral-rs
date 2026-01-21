@@ -1,6 +1,6 @@
 [package]
 name = "coral-rs"
-version = "0.2.2"
+version = "0.2.3"
 license = "MIT"
 description = "Rig and RMCP helper library for quickly building Rust powered Coral feature complete agents"
 repository = "https://github.com/Coral-Protocol/coral-rs"
@@ -17,6 +17,7 @@ rmcp = { version = "0.5.0", features = [
     "client",
     "transport-sse-client",
     "transport-child-process",
+    "transport-streamable-http-client",
     "reqwest",
     "tower",
     "auth"
