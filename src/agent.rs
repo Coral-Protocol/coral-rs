@@ -220,7 +220,7 @@ impl<M: CompletionModel> Agent<M> {
         &mut self,
         mut messages: Vec<Message>,
     ) -> Result<CompletionResult, Error> {
-        let tool_server_handle = self.build_tool_server().await?;
+        self.completion_agent.tool_server_handle = self.build_tool_server().await?;
         self.validate_preamble().await?;
 
         // Take the last message from the stack as a prompt
@@ -254,7 +254,9 @@ impl<M: CompletionModel> Agent<M> {
                 AssistantContent::ToolCall(tool_call) => {
                     tools_used = tools_used + 1;
 
-                    let output = tool_server_handle
+                    let output = self
+                        .completion_agent
+                        .tool_server_handle
                         .call_tool(
                             &tool_call.function.name,
                             &*tool_call.function.arguments.to_string(),

@@ -60,7 +60,7 @@ impl<M: CompletionModel> AgentLoop<M> {
                 depth = depth + 1;
                 info!(
                     "Tool iteration {}/{} [prompt iteration {iterations}]",
-                    depth + 1,
+                    depth,
                     self.iteration_tool_quota
                         .map_or("unlimited".to_string(), |x| x.to_string()),
                 );
