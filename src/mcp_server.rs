@@ -23,7 +23,7 @@ pub struct McpConnectionBuilder {
 }
 
 impl McpConnectionBuilder {
-    fn new() -> Self {
+    pub fn builder() -> Self {
         Self {
             client_info: ClientInfo {
                 protocol_version: Default::default(),
@@ -85,7 +85,7 @@ impl McpConnectionBuilder {
     /// CORAL_CONNECTION_URL environment variable and therefore only works when this is set (this
     /// is automatically set for agents launched by the Coral server).
     pub async fn build_coral_sse() -> Result<McpServerConnection, Error> {
-        Self::new()
+        Self::builder()
             .revalidate_tooling(false)
             .build_sse(std::env::var("CORAL_CONNECTION_URL").expect("CORAL_CONNECTION_URL not set"))
             .await
