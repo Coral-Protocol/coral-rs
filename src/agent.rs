@@ -7,6 +7,7 @@ use rig::completion::{AssistantContent, Completion, CompletionModel, Message};
 use rig::message::UserContent;
 use rig::tool::server::{ToolServer, ToolServerHandle};
 use std::collections::HashSet;
+use tracing::{info, warn};
 
 pub struct Agent<M: CompletionModel> {
     completion_agent: rig::agent::Agent<M>,
@@ -262,7 +263,10 @@ impl<M: CompletionModel> Agent<M> {
                             &*tool_call.function.arguments.to_string(),
                         )
                         .await
-                        .map_err(Error::ToolsetError)?;
+                        .unwrap_or_else(|e| {
+                            warn!("error calling tool {}: {e}", tool_call.function.name);
+                            e.to_string()
+                        });
 
                     if let Some(claim_manager) = &self.claim_manager {
                         claim_manager
