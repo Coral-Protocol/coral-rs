@@ -1,16 +1,11 @@
 use crate::completion_evaluated_prompt::CompletionEvaluatedPrompt;
 use crate::error::Error;
-use reqwest::header::HeaderMap;
-use rig::tool::rmcp::McpTool;
 use rmcp::model::{
     ClientInfo, Implementation, ProtocolVersion, ReadResourceRequestParam, ResourceContents, Tool,
 };
 use rmcp::service::RunningService;
-use rmcp::transport::sse_client::SseClientConfig;
 use rmcp::transport::streamable_http_client::StreamableHttpClientTransportConfig;
-use rmcp::transport::{
-    ConfigureCommandExt, SseClientTransport, StreamableHttpClientTransport, TokioChildProcess,
-};
+use rmcp::transport::{ConfigureCommandExt, StreamableHttpClientTransport, TokioChildProcess};
 use rmcp::{Peer, RoleClient, ServiceExt};
 use std::ffi::OsStr;
 use std::sync::Arc;
@@ -82,55 +77,17 @@ impl McpConnectionBuilder {
 
     ///
     /// Helper function to build a connection to the Coral server.  This uses the Coral-provided
-    /// CORAL_CONNECTION_URL environment variable and therefore only works when this is set (this
-    /// is automatically set for agents launched by the Coral server).
-    pub async fn build_coral_sse() -> Result<McpServerConnection, Error> {
+    /// CORAL_CONNECTION_URL, and it expects that CORAL_CONNECTION_URL contains a URL to a
+    /// streamable http MCP server.
+    ///
+    /// Note that this version of coral-rs uses a version of rmcp that no longer supports SSE.
+    pub async fn build_coral_streamable_http() -> Result<McpServerConnection, Error> {
         Self::builder()
             .revalidate_tooling(false)
-            .build_sse(std::env::var("CORAL_CONNECTION_URL").expect("CORAL_CONNECTION_URL not set"))
-            .await
-    }
-
-    ///
-    /// Builds a basic MCP server connection using an SSE transport to the specified [url]
-    pub async fn build_sse(self, url: impl Into<String>) -> Result<McpServerConnection, Error> {
-        self.build_sse_with_headers(url, HeaderMap::new()).await
-    }
-
-    ///
-    /// Builds a new MCP connection builder using an SSE transport, allowing headers to be passed
-    /// (usually used for authorization)
-    pub async fn build_sse_with_headers(
-        self,
-        url: impl Into<String>,
-        headers: impl Into<HeaderMap>,
-    ) -> Result<McpServerConnection, Error> {
-        let url = url.into();
-        let transport = self
-            .client_info
-            .serve(
-                SseClientTransport::start_with_client(
-                    reqwest::ClientBuilder::new()
-                        .default_headers(headers.into())
-                        .build()
-                        .map_err(|e| Error::McpSseError(e.into()))?,
-                    SseClientConfig {
-                        sse_endpoint: url.clone().into(),
-                        ..Default::default()
-                    },
-                )
-                .await
-                .map_err(Error::McpSseError)?,
+            .build_streamable_http(
+                std::env::var("CORAL_CONNECTION_URL").expect("CORAL_CONNECTION_URL not set"),
             )
             .await
-            .map_err(Error::McpClientError)?;
-
-        Ok(McpServerConnection::new(
-            transport,
-            self.revalidate_tooling,
-            self.skip_tooling,
-            url,
-        ))
     }
 
     ///
@@ -166,36 +123,33 @@ impl McpConnectionBuilder {
         self,
         uri: impl Into<String>,
     ) -> Result<McpServerConnection, Error> {
-        self.build_streamable_http_with_headers(uri, HeaderMap::new())
-            .await
+        self.build_streamable_http_with_auth(uri, None).await
     }
 
     ///
-    /// Builds an MCP connection from a streamable HTTP URI.  This function allows headers to be
-    /// passed through for authorization.
-    pub async fn build_streamable_http_with_headers(
+    /// Builds an MCP connection from a streamable HTTP URI, including an optional authorization
+    /// header value.
+    pub async fn build_streamable_http_with_auth(
         self,
         uri: impl Into<String>,
-        headers: impl Into<HeaderMap>,
+        auth_header: Option<String>,
     ) -> Result<McpServerConnection, Error> {
         let uri = uri.into();
-        let transport = self
+        let transport =
+            StreamableHttpClientTransport::from_config(StreamableHttpClientTransportConfig {
+                uri: uri.clone().into(),
+                auth_header,
+                ..Default::default()
+            });
+
+        let running_service = self
             .client_info
-            .serve(StreamableHttpClientTransport::with_client(
-                reqwest::ClientBuilder::new()
-                    .default_headers(headers.into())
-                    .build()
-                    .map_err(|e| Error::McpSseError(e.into()))?,
-                StreamableHttpClientTransportConfig {
-                    uri: uri.clone().into(),
-                    ..Default::default()
-                },
-            ))
+            .serve(transport)
             .await
             .map_err(Error::McpClientError)?;
 
         Ok(McpServerConnection::new(
-            transport,
+            running_service,
             self.revalidate_tooling,
             self.skip_tooling,
             uri,

@@ -1,10 +1,8 @@
 use crate::api::generated::types::RouteException;
 use progenitor::progenitor_client::Error as ProgenitorError;
-use rig::tool::ToolSetError;
 use rig::tool::server::ToolServerError;
 use rmcp::ServiceError;
 use rmcp::service::ClientInitializeError;
-use rmcp::transport::sse_client::SseTransportError;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -13,10 +11,10 @@ pub enum Error {
     McpClientError(ClientInitializeError),
 
     #[error("mcp error: {0}")]
-    McpSseError(SseTransportError<reqwest::Error>),
+    McpStdioError(std::io::Error),
 
     #[error("mcp error: {0}")]
-    McpStdioError(std::io::Error),
+    McpNetworkError(reqwest::Error),
 
     #[error("mcp error: {0}")]
     McpServiceError(ServiceError),
