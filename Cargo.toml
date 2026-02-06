@@ -10,13 +10,11 @@ edition = "2024"
 tracing-subscriber = "0.3.19"
 tokio = { version = "1.46.1", features = ["rt-multi-thread", "rt", "macros"] }
 tracing = "0.1.41"
-rig-core = { version = "0.27.0", features = ["rmcp"] }
+rig-core = { version = "0.30.0", features = ["rmcp"] }
 serde_json = "1.0.141"
 serde = { version = "1.0.219", features = ["derive"] }
-rmcp = { version = "0.9.0", features = [
+rmcp = { version = "0.13.0", features = [
     "client",
-    "transport-sse-client",
-    "transport-sse-client-reqwest",
     "transport-child-process",
     "transport-streamable-http-client",
     "transport-streamable-http-client-reqwest",
@@ -24,10 +22,10 @@ rmcp = { version = "0.9.0", features = [
     "tower",
     "auth"
 ] }
-reqwest = "0.12.22"
+reqwest = "0.13.1"
 thiserror = "2.0.12"
-progenitor = "0.11.0"
-progenitor-client = "0.11.0"
+progenitor = "0.12.0"
+progenitor-client = "0.12.0"
 futures = "0.3.31"
 toml = "0.9.8"
 quote = "1.0.42"
@@ -40,4 +38,4 @@ base64 = "0.22.1"
 serde_json = "1.0.143"
 syn = "2.0.106"
 prettyplease = "0.2.37"
-progenitor = "0.11.0"
+progenitor = "0.12.0"
