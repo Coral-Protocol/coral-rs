@@ -7,7 +7,7 @@ use rig::completion::{AssistantContent, Completion, CompletionModel, Message};
 use rig::message::UserContent;
 use rig::tool::server::{ToolServer, ToolServerHandle};
 use std::collections::HashSet;
-use tracing::{trace, warn};
+use tracing::warn;
 
 pub struct Agent<M: CompletionModel> {
     completion_agent: rig::agent::Agent<M>,
