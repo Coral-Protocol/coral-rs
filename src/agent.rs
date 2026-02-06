@@ -7,7 +7,7 @@ use rig::completion::{AssistantContent, Completion, CompletionModel, Message};
 use rig::message::UserContent;
 use rig::tool::server::{ToolServer, ToolServerHandle};
 use std::collections::HashSet;
-use tracing::{info, warn};
+use tracing::{trace, warn};
 
 pub struct Agent<M: CompletionModel> {
     completion_agent: rig::agent::Agent<M>,
@@ -15,7 +15,7 @@ pub struct Agent<M: CompletionModel> {
     revalidating_tooling: HashSet<String>,
     agent_name: String,
     agent_version: String,
-    preamble: Option<CompletionEvaluatedPrompt>,
+    system_text: CompletionEvaluatedPrompt,
     claim_manager: Option<ClaimManager>,
 }
 
@@ -38,14 +38,17 @@ pub struct CompletionResult {
 impl<M: CompletionModel> Agent<M> {
     ///
     /// Creates a new Coral agent using an underlying completion agent.
-    pub fn new(completion_agent: rig::agent::Agent<M>) -> Self {
+    pub fn new(
+        completion_agent: rig::agent::Agent<M>,
+        system_text: CompletionEvaluatedPrompt,
+    ) -> Self {
         Self {
             completion_agent,
             mcp_connections: Vec::new(),
             revalidating_tooling: HashSet::new(),
             agent_name: env!("CARGO_PKG_NAME").to_string(),
             agent_version: env!("CARGO_PKG_VERSION").to_string(),
-            preamble: None,
+            system_text,
             claim_manager: None,
         }
     }
@@ -72,16 +75,6 @@ impl<M: CompletionModel> Agent<M> {
             connection,
             tools_validated: false,
         });
-        self
-    }
-
-    ///
-    /// Sets the preamble for this agent to a specific [`CompletionEvaluatedPrompt`] instance.  Note
-    /// that if this is not set, the default string provided to the inner agent model will be used.
-    ///
-    /// The preamble will be evaluated in each call to [`Self::run_completion`].
-    pub fn preamble(mut self, preamble: CompletionEvaluatedPrompt) -> Self {
-        self.preamble = Some(preamble);
         self
     }
 
@@ -181,26 +174,6 @@ impl<M: CompletionModel> Agent<M> {
         Ok(tool_server.run())
     }
 
-    ///
-    /// If there was a preamble provided to this agent, this function will evaluate it, and if the
-    /// evaluation succeeds, the inner model's preamble field will be overwritten to this newly
-    /// evaluated prompt.
-    ///
-    /// If there was no preamble provided to this agent, nothing will happen here.
-    ///
-    /// If the evaluation of the prompt fails (e.g., failure to locate a resource), this function will
-    /// return an error.
-    async fn validate_preamble(&mut self) -> Result<(), Error> {
-        if let Some(prompt) = &self.preamble {
-            match prompt.evaluate().await {
-                Ok(prompt) => self.completion_agent.preamble = Some(prompt),
-                Err(e) => return Err(e),
-            }
-        }
-
-        Ok(())
-    }
-
     /// Performs a completion request
     ///
     /// This function, in order:
@@ -222,27 +195,15 @@ impl<M: CompletionModel> Agent<M> {
         mut messages: Vec<Message>,
     ) -> Result<CompletionResult, Error> {
         self.completion_agent.tool_server_handle = self.build_tool_server().await?;
-        self.validate_preamble().await?;
-
-        // Take the last message from the stack as a prompt
-        let prompt = messages
-            .pop()
-            .expect("cannot send completion with no messages");
 
         let resp = self
             .completion_agent
-            .completion(prompt.clone(), messages.clone())
+            .completion(self.system_text.evaluate().await?, messages.clone())
             .await
             .map_err(Error::CompletionError)?
             .send()
             .await
             .map_err(Error::CompletionError)?;
-
-        messages.push(prompt);
-        messages.push(Message::Assistant {
-            id: None,
-            content: resp.choice.clone(),
-        });
 
         if let Some(claim_manager) = &self.claim_manager {
             claim_manager.claim_tokens(&resp.usage).await?;
@@ -251,7 +212,7 @@ impl<M: CompletionModel> Agent<M> {
         let mut tools_used = 0;
         let mut texts = Vec::new();
         for choice in resp.choice {
-            match choice {
+            match &choice {
                 AssistantContent::ToolCall(tool_call) => {
                     tools_used = tools_used + 1;
 
@@ -274,7 +235,11 @@ impl<M: CompletionModel> Agent<M> {
                             .await?;
                     }
 
-                    messages.push(if let Some(call_id) = tool_call.call_id {
+                    messages.push(Message::Assistant {
+                        id: None,
+                        content: OneOrMany::one(choice.clone()),
+                    });
+                    messages.push(if let Some(call_id) = tool_call.call_id.clone() {
                         UserContent::tool_result_with_call_id(
                             tool_call.id.clone(),
                             call_id,
