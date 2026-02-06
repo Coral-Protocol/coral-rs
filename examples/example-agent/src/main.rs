@@ -1,51 +1,45 @@
 use coral_rs::agent::Agent;
 use coral_rs::agent_loop::AgentLoop;
-use coral_rs::api::generated::types::AgentClaimAmount;
-use coral_rs::claim_manager::ClaimManager;
+use coral_rs::completion_evaluated_prompt::CompletionEvaluatedPrompt;
 use coral_rs::init_tracing;
 use coral_rs::mcp_server::McpConnectionBuilder;
 use coral_rs::repeating_prompt_stream::repeating_prompt_stream;
 use coral_rs::rig::client::CompletionClient;
 use coral_rs::rig::client::ProviderClient;
-use coral_rs::rig::providers::openai;
-use coral_rs::rig::providers::openai::GPT_4_1_MINI;
-use std::time::Duration;
+use coral_rs::rig::message::ToolChoice;
+use coral_rs::rig::providers::anthropic;
 
 #[tokio::main]
 async fn main() {
     init_tracing().expect("setting default subscriber failed");
 
-    let model = GPT_4_1_MINI;
-
-    let coral_mcp = McpConnectionBuilder::build_coral_sse()
+    let coral_mcp = McpConnectionBuilder::build_coral_streamable_http()
         .await
         .expect("Failed to connect to the Coral server");
 
-    let completion_agent = openai::Client::from_env()
-        .agent(model)
-        .preamble("You are a unit test.")
-        .temperature(0.97)
-        .max_tokens(512)
+    let completion_agent = anthropic::Client::from_env()
+        .agent("claude-sonnet-4-5")
+        .max_tokens(4096)
+        .tool_choice(ToolChoice::Required)
         .build();
 
-    let prompt = coral_mcp
-        .prompt_with_resources_str("1. Repeat to me the Coral instruction set")
-        .string("2. Create a Coral message thread and send a few random words in it")
-        .string("3. Close the Coral thread with a random summary");
+    let agent = Agent::new(
+        completion_agent,
+        CompletionEvaluatedPrompt::new()
+            .all_resources(coral_mcp.clone())
+            .string("You are the Replicate agent, you must use replicate tooling to assist other agents"),
+    ).mcp_server(coral_mcp);
 
-    let claim_manager = ClaimManager::new()
-        .mil_input_token_cost(AgentClaimAmount::Usd(1.250))
-        .mil_output_token_cost(AgentClaimAmount::Usd(10.000))
-        .base_tool_call_cost(AgentClaimAmount::Usd(1.0))
-        .base_tool_iteration_cost(AgentClaimAmount::Usd(10.0))
-        .base_iteration_cost(AgentClaimAmount::Usd(30.0))
-        .custom_tool_cost("coral_send_message", AgentClaimAmount::Usd(100.0));
+    let initial_user_prompt = CompletionEvaluatedPrompt::new()
+        .string("[automated message] You are an autonomous agent designed to assist users by collaborating with other agents.")
+        .string("If no instructions are provided, consider waiting for mentions until another agent provides further direction.")
+        .string("Remember that 'I' am not the user, who is not directly reachable. Use tools to interact with other agents as necessary to fulfil the users needs. You will receive further automated messages this way.");
 
-    let agent = Agent::new(completion_agent)
-        .claim_manager(claim_manager)
-        .mcp_server(coral_mcp.clone());
+    let followup_user_prompt = CompletionEvaluatedPrompt::from_string(
+        "[automated message] Continue fulfilling your responsibilities collaboratively to the best of your ability.",
+    );
 
-    let prompt_stream = repeating_prompt_stream(prompt, Some(Duration::from_secs(1)), 1);
+    let prompt_stream = repeating_prompt_stream(initial_user_prompt, followup_user_prompt, None, 1);
 
     AgentLoop::new(agent, prompt_stream)
         .execute()

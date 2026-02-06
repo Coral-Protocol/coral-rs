@@ -61,7 +61,7 @@ DEFAULT_F32 = { type = "f32", default = 3.14 }
 DEFAULT_F64 = { type = "f64", default = 2.718281828 }
 DEFAULT_BOOL = { type = "bool", default = true }
 DEFAULT_STRING = { type = "string", default = "hello world" }
-DEFAULT_BLOB = { type = "blob", default = [72, 101, 108, 108, 111] }
+DEFAULT_BLOB = { type = "blob", default = "aGVsbG8gd29ybGQ=" }
 DEFAULT_NUMBER = { type = "number", default = 42 }
 DEFAULT_SECRET = { type = "secret", default = "my-secret-key-123" }
 DEFAULT_LIST_I8 = { type = "list[i8]", default = [-1, 0, 1, 127] }
@@ -75,7 +75,7 @@ DEFAULT_LIST_U64 = { type = "list[u64]", default = ["100000", "200000", "300000"
 DEFAULT_LIST_F32 = { type = "list[f32]", default = [1.1, 2.2, 3.3] }
 DEFAULT_LIST_F64 = { type = "list[f64]", default = [1.414, 1.732, 2.236] }
 DEFAULT_LIST_STRING = { type = "list[string]", default = ["foo", "bar", "baz"] }
-DEFAULT_LIST_BLOB = { type = "list[blob]", default = [[1, 2, 3, 4], [5, 6, 7, 8]] }
+DEFAULT_LIST_BLOB = { type = "list[blob]", default = ["aGVsbG8=", "d29ybGQ="] }
 
 #
 # Optional
