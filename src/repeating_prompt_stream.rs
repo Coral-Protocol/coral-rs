@@ -4,13 +4,20 @@ use std::time::Duration;
 use tokio::time::sleep;
 
 pub fn repeating_prompt_stream(
-    prompt: impl Into<CompletionEvaluatedPrompt>,
+    initial_prompt: impl Into<CompletionEvaluatedPrompt>,
+    repeating_prompt: impl Into<CompletionEvaluatedPrompt>,
     delay: Option<Duration>,
     max_reps: usize,
 ) -> impl Stream<Item = CompletionEvaluatedPrompt> {
     stream::unfold(
-        (prompt.into(), delay, max_reps, 0),
-        |(prompt, delay, max_reps, reps)| {
+        (
+            initial_prompt.into(),
+            repeating_prompt.into(),
+            delay,
+            max_reps,
+            0,
+        ),
+        |(initial_prompt, repeating_prompt, delay, max_reps, reps)| {
             Box::pin(async move {
                 if reps >= max_reps {
                     return None;
@@ -22,7 +29,16 @@ pub fn repeating_prompt_stream(
                     }
                 }
 
-                Some((prompt.clone(), (prompt, delay, max_reps, reps + 1)))
+                let prompt = if reps == 0 {
+                    initial_prompt.clone()
+                } else {
+                    repeating_prompt.clone()
+                };
+
+                Some((
+                    prompt,
+                    (initial_prompt, repeating_prompt, delay, max_reps, reps + 1),
+                ))
             })
         },
     )
